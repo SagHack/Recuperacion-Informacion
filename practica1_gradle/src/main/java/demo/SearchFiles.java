@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -56,7 +57,7 @@ public class SearchFiles {
 
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(index)));
         IndexSearcher searcher = new IndexSearcher(reader);
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new SpanishAnalyzer();
 
         System.out.println("Enter query: ");
 
@@ -86,24 +87,20 @@ public class SearchFiles {
         int numTotalHits = Math.toIntExact(results.totalHits.value);
         System.out.println(numTotalHits + " total matching documents");
 
-        ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
-        StoredFields storedFields = searcher.storedFields();
-        for (int i = 0; i < hits.length; i++) {
-            Document doc = storedFields.document(hits[i].doc);
-            String path = doc.get("path");
-            if (path != null) {
-                System.out.println((i+1)+". " + path);
-            } else {
-                System.out.println((i+1)+". No path for this document");
+        if (numTotalHits>0) {
+            ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
+            StoredFields storedFields = searcher.storedFields();
+            for (int i = 0; i < hits.length; i++) {
+                Document doc = storedFields.document(hits[i].doc);
+                String path = doc.get("path");
+                if (path != null) {
+                    System.out.println((i + 1) + ". " + path);
+                } else {
+                    System.out.println((i + 1) + ". No path for this document");
+                }
+                if (additionalInfo)
+                    System.out.println("\tdoc=" + hits[i].doc + " score=" + hits[i].score);
             }
-            additionalInfo = true;
-            if (additionalInfo)
-                System.out.println("\tdoc=" + hits[i].doc + " score=" + hits[i].score);
-                System . out . println ( searcher . explain ( query , hits [ i ]. doc ) ) ;
-
-
-
-
         }
     }
 }

@@ -1,6 +1,7 @@
 package demo;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexWriter;
@@ -9,7 +10,11 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,7 +72,7 @@ public class IndexFiles {
             System.out.println("Indexing to directory '" + indexPath + "'...");
 
             Directory dir = FSDirectory.open(Paths.get(indexPath));
-            Analyzer analyzer = new StandardAnalyzer();
+            Analyzer analyzer = new SpanishAnalyzer();
             IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 
             if (create) {
@@ -116,73 +121,52 @@ public class IndexFiles {
      * @param file The file to index, or the directory to recurse into to find files to index
      * @throws IOException If there is a low-level I/O error
      */
-    static void indexDocs(IndexWriter writer, File file)
-            throws IOException {
-        // do not try to index files that cannot be read
+    static void indexDocs(IndexWriter writer, File file) throws IOException {
         if (file.canRead()) {
             if (file.isDirectory()) {
                 String[] files = file.list();
-                // an IO error could occur
                 if (files != null) {
-                    List<String> fileList = new LinkedList<String>(Arrays.asList(files));
+                    List<String> fileList = new LinkedList<>(Arrays.asList(files));
                     Collections.sort(fileList);
-                    for (String fileName: fileList) {
+                    for (String fileName : fileList) {
                         indexDocs(writer, new File(file, fileName));
                     }
                 }
             } else {
-
                 FileInputStream fis;
                 try {
                     fis = new FileInputStream(file);
                 } catch (FileNotFoundException fnfe) {
-                    // at least on windows, some temporary files raise this exception with an "access denied" message
-                    // checking if the file can be read doesn't help
                     return;
                 }
 
                 try {
-
-                    // make a new, empty document
                     Document doc = new Document();
 
-                    // Add the path of the file as a field named "path".  Use a
-                    // field that is indexed (i.e. searchable), but don't tokenize
-                    // the field into separate words and don't index term frequency
-                    // or positional information:
-                    Field pathField = new StringField("path", file.getPath(), Field.Store.YES);
-                    doc.add(pathField);
+                    // Add the last modified date of the file as a field named "modified".
+                    //doc.add(new StoredField("modified", file.lastModified()));
 
-                    // Add the last modified date of the file a field named "modified".
-                    // Use a StoredField to return later its value as a response to a query.
-                    // This indexes to milli-second resolution, which
-                    // is often too fine.  You could instead create a number based on
-                    // year/month/day/hour/minutes/seconds, down the resolution you require.
-                    // For example the long value 2011021714 would mean
-                    // February 17, 2011, 2-3 PM.
-                    doc.add(new StoredField("modified", file.lastModified()));
+                    // Add the contents of the file to a field named "contents".
+                    //doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))));
 
-                    // Add the contents of the file to a field named "contents".  Specify a Reader,
-                    // so that the text of the file is tokenized and indexed, but not stored.
-                    // Note that FileReader expects the file to be in UTF-8 encoding.
-                    // If that's not the case searching for special characters will fail.
-                    doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))));
-                    
-              
-
+                    // Call parserXML for each specific tag you want to extract and index.
+                    parserXML(file, doc, "dc:title", "title", true);
+                    parserXML(file, doc, "dc:identifier", "identifier", false);
+                    parserXML(file, doc, "dc:subject", "subject", true);
+                    parserXML(file, doc, "dc:type", "type", false);
+                    parserXML(file, doc, "dc:description", "description", true);
+                    parserXML(file, doc, "dc:creator", "creator", true);
+                    parserXML(file, doc, "dc:publisher", "publisher", true);
+                    parserXML(file, doc, "dc:format", "format", false);
+                    parserXML(file, doc, "dc:language", "language", false);
 
                     if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-                        // New index, so we just add the document (no old document can be there):
                         System.out.println("adding " + file);
                         writer.addDocument(doc);
                     } else {
-                        // Existing index (an old copy of this document may have been indexed) so
-                        // we use updateDocument instead to replace the old one matching the exact
-                        // path, if present:
                         System.out.println("updating " + file);
                         writer.updateDocument(new Term("path", file.getPath()), doc);
                     }
-
                 } finally {
                     fis.close();
                 }
@@ -190,22 +174,37 @@ public class IndexFiles {
         }
     }
 
-    // Crear un objeto de tipo java.xml.parsers.DocumentBuilder para parsear un documento
-    // y generar un documento de tipo org.w3c.dom.Document
-    public static void createXML(File file){
-        // Crear un objeto de tipo javax.xml.parsers.DocumentBuilder
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        // Crear un objeto de tipo org.w3c.dom.Document
-        org.w3c.dom.Document doc = builder.parse(new File(file));
-        // Crear un objeto de tipo org.apache.lucene.document.Document
-        org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
-        // Crear un objeto de tipo org.apache.lucene.document.Field
-        org.apache.lucene.document.Field field = new org.apache.lucene.document.Field("nombre del campo", "valor del campo", org.apache.lucene.document.Field.Store.YES, org.apache.lucene.document.Field.Index.ANALYZED);
-        // Añadir el campo al documento
-        luceneDoc.add(field);
-        // Añadir el documento al índice
-        writer.addDocument(luceneDoc);
-        
+    private static void parserXML(File file, Document doc, String tag, String campo, boolean textField) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            org.w3c.dom.Document documento = builder.parse(file);
+
+            org.w3c.dom.NodeList nList = documento.getElementsByTagName(tag);
+
+            int n = nList.getLength();
+            for (int i = 0; i < n; i++) {
+                org.w3c.dom.Node nodo = nList.item(i);
+                String contenido = nodo.getTextContent();
+
+                System.out.println(campo + ":" + contenido);
+                if (textField) {
+                    doc.add(new TextField(campo, contenido, Field.Store.NO));
+                } else {
+                    doc.add(new StringField(campo, contenido, Field.Store.YES));
+                }
+            }
+        } catch (ParserConfigurationException e) {
+            // Handle ParserConfigurationException
+            e.printStackTrace();
+        } catch (IOException e) {
+            // Handle IOException
+            e.printStackTrace();
+        } catch (SAXException e) {
+            // Handle SAXException
+            e.printStackTrace();
+        }
     }
-    
+
+
 }
