@@ -57,7 +57,9 @@ public class SearchFiles {
 
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(index)));
         IndexSearcher searcher = new IndexSearcher(reader);
-        Analyzer analyzer = new SpanishAnalyzer();
+        //Analyzer analyzer = new SpanishAnalyzer();
+        Analyzer analyzer = new SpanishAnalyzer2();
+
 
         System.out.println("Enter query: ");
 
