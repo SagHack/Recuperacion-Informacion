@@ -72,9 +72,7 @@ public class IndexFiles {
             System.out.println("Indexing to directory '" + indexPath + "'...");
 
             Directory dir = FSDirectory.open(Paths.get(indexPath));
-            // Analyzer analyzer = new SpanishAnalyzer();
             Analyzer analyzer = new SpanishAnalyzer2();
-
             IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 
             if (create) {
@@ -146,21 +144,21 @@ public class IndexFiles {
                     Document doc = new Document();
 
                     // Add the last modified date of the file as a field named "modified".
-                    //doc.add(new StoredField("modified", file.lastModified()));
+                    doc.add(new StoredField("modified", file.lastModified()));
 
-                    // Add the contents of the file to a field named "contents".
-                    //doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))));
+                    // Add the path of the file as a field named "path"
+                    Field pathField = new StringField("path",file.getPath(),Field.Store.YES);
+                    doc.add(pathField);
 
                     // Call parserXML for each specific tag you want to extract and index.
-                    parserXML(file, doc, "dc:title", "title", true);
                     parserXML(file, doc, "dc:identifier", "identifier", false);
-                    parserXML(file, doc, "dc:subject", "subject", true);
-                    parserXML(file, doc, "dc:type", "type", false);
-                    parserXML(file, doc, "dc:description", "description", true);
+                    parserXML(file, doc, "dc:type", "type", true);
                     parserXML(file, doc, "dc:creator", "creator", true);
+                    parserXML(file, doc, "dc:contributor", "contributor", true);
                     parserXML(file, doc, "dc:publisher", "publisher", true);
-                    parserXML(file, doc, "dc:format", "format", false);
-                    parserXML(file, doc, "dc:language", "language", false);
+                    parserXML(file, doc, "dc:title", "title", true);
+                    parserXML(file, doc, "dc:description", "description", true);
+                    parserXML(file, doc, "dc:date", "date", false);
 
                     if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
                         System.out.println("adding " + file);
@@ -169,6 +167,15 @@ public class IndexFiles {
                         System.out.println("updating " + file);
                         writer.updateDocument(new Term("path", file.getPath()), doc);
                     }
+
+                    String content = doc.get("type") + " " +
+                            doc.get("creator") + " " +
+                            doc.get("contributor") + " " +
+                            doc.get("publisher") + " " +
+                            doc.get("title") + " " +
+                            doc.get("description");
+
+                    doc.add(new TextField("content", content, Field.Store.NO));
                 } finally {
                     fis.close();
                 }
@@ -183,7 +190,6 @@ public class IndexFiles {
             org.w3c.dom.Document documento = builder.parse(file);
 
             org.w3c.dom.NodeList nList = documento.getElementsByTagName(tag);
-
             int n = nList.getLength();
             for (int i = 0; i < n; i++) {
                 org.w3c.dom.Node nodo = nList.item(i);

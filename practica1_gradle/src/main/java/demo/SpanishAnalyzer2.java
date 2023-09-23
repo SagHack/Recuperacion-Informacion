@@ -16,6 +16,7 @@
  */
 package demo;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -125,8 +126,13 @@ public final class SpanishAnalyzer2 extends StopwordAnalyzerBase {
         return new LowerCaseFilter(in);
     }
 
-    public static CharArraySet createStopSet2() { 
-        String[] stopWords = {"el", "la", "lo", "en"};
-        return StopFilter.makeStopSet(stopWords);
+    public static CharArraySet createStopSet3 () {
+        try {
+            CharArraySet stopSet = WordlistLoader.getSnowballWordSet(new FileReader("spanish_stop.txt"));
+            return stopSet;
+        } catch (IOException ex) {
+            throw new RuntimeException("Unable to load default stopword set");
+        }
     }
+
 }

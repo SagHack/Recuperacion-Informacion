@@ -1,28 +1,16 @@
-package demo;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.es.SpanishAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
 
-/**
- * Simple command-line based search demo.
- */
 public class SearchFiles {
 
     public static final int INITIAL_HITS = 100;
@@ -30,78 +18,55 @@ public class SearchFiles {
     public SearchFiles() {
     }
 
-    /**
-     * Simple command-line based search demo.
-     */
     public static void main(String[] args) throws Exception {
-        String usage =
-                "Usage:\tjava org.apache.lucene.demo.SearchFiles [-index dir] [-field f] [-info]";
-        if (args.length > 0 && ("-h".equals(args[0]) || "-help".equals(args[0]))) {
-            System.out.println(usage);
-            System.exit(0);
-        }
-
         String index = "index";
-        String field = "contents";
-        boolean additionalInfo = false;
-
-        for (int i = 0; i < args.length; i++) {
-            if ("-index".equals(args[i])) {
-                index = args[++i];
-            } else if ("-field".equals(args[i])) {
-                field = args[++i];
-            } else if ("-info".equals(args[i])) {
-                additionalInfo = true;
-            }
-        }
-
+        String infoNeeds = "consultas.txt";
+        String output = "resultados.txt";
+        String field = "content";
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(index)));
         IndexSearcher searcher = new IndexSearcher(reader);
-        //Analyzer analyzer = new SpanishAnalyzer();
-        Analyzer analyzer = new SpanishAnalyzer2();
+        Analyzer analyzer = new SpanishAnalyzer();
 
+        try (BufferedReader queryReader = new BufferedReader(new FileReader(infoNeeds, StandardCharsets.UTF_8));
+             BufferedWriter resultsWriter = new BufferedWriter(new FileWriter(output, StandardCharsets.UTF_8))) {
 
-        System.out.println("Enter query: ");
+            String queryString;
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-
-        QueryParser parser = new QueryParser(field, analyzer);
-
-        String queryString = in.readLine();
-
-        if (queryString != null && !queryString.isEmpty()) {
-            queryString = queryString.trim();
-            if (!queryString.isEmpty()) {
-                Query query = parser.parse(queryString);
-                showResults(searcher, query, additionalInfo);
+            while ((queryString = queryReader.readLine()) != null) {
+                queryString = queryString.trim();
+                if (!queryString.isEmpty()) {
+                    QueryParser parser = new QueryParser(field, analyzer); // Replace with the actual field name to search
+                    Query query = parser.parse(queryString);
+                    showResults(searcher, query, resultsWriter);
+                }
             }
+            System.out.println("Results are in the file: " + output);
         }
     }
 
-    /**
-     * Typical procedure to show the results of a query. For performance issues, the list of results is usually limited to a maximum around 1,000 records.
-     * More details at https://lucene.apache.org/core/9_7_0/core/org/apache/lucene/search/IndexSearcher.html
-     */
-    public static void showResults(IndexSearcher searcher, Query query, boolean additionalInfo) throws IOException {
+    public static void showResults(IndexSearcher searcher, Query query, BufferedWriter writer) throws IOException {
         System.out.println("Searching for: " + query.toString());
-
-        TopDocs results = searcher.search(query, INITIAL_HITS);
+        Sort sort = new Sort(new SortField(null, SortField.Type.SCORE, true));
+        TopDocs results = searcher.search(query, INITIAL_HITS,sort);
         int numTotalHits = Math.toIntExact(results.totalHits.value);
-        System.out.println(numTotalHits + " total matching documents");
+        writer.write("Searching for: " + query.toString());
+        writer.newLine();
+        // Sort by score in descending order (higher scores first)
 
-        if (numTotalHits>0) {
+
+        if (numTotalHits > 0) {
             ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
             StoredFields storedFields = searcher.storedFields();
             for (int i = 0; i < hits.length; i++) {
                 Document doc = storedFields.document(hits[i].doc);
-                String path = doc.get("path");
-                if (path != null) {
-                    System.out.println((i + 1) + ". " + path);
-                } else {
-                    System.out.println((i + 1) + ". No path for this document");
-                }
-                if (additionalInfo)
-                    System.out.println("\tdoc=" + hits[i].doc + " score=" + hits[i].score);
+                String identifier = doc.get("identifier");
+                String resultLine = (i + 1) + ". " + (identifier != null ? identifier : "No identifier for this element.");
+                writer.write(resultLine);
+                writer.newLine();
+
+//                String additionalInfoLine = "\tdoc=" + hits[i].doc + " score=" + hits[i].score;
+//                writer.write(additionalInfoLine);
+//                writer.newLine();
             }
         }
     }
