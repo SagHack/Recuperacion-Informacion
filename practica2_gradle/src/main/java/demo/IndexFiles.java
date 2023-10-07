@@ -99,7 +99,7 @@ public class IndexFiles {
             // worth it when your index is relatively static (ie
             // you're done adding documents to it):
             //
-            // writer.forceMerge(1); 
+            // writer.forceMerge(1);
 
             writer.close();
 
@@ -150,17 +150,20 @@ public class IndexFiles {
                     doc.add(pathField);
 
                     // Call parserXML for each specific tag you want to extract and index.
-                    parserXML(file, doc, "dc:identifier", "identifier", false);
+                    parserXML(file, doc, "dc:identifier", "identifier", false,true);
                     // parserXML(file, doc, "dc:type", "type", true);
                     // parserXML(file, doc, "dc:creator", "creator", true);
                     // parserXML(file, doc, "dc:contributor", "contributor", true);
                     // parserXML(file, doc, "dc:publisher", "publisher", true);
-                    parserXML(file, doc, "dc:title", "title", false);
+                    parserXML(file, doc, "dc:title", "title", true,false);
+                    parserXML(file, doc, "dcterms:issued", "issued", false,false);
+                    parserXML(file, doc, "dcterms:created", "created", false,false);
                     // parserXML(file, doc, "dc:description", "description", true);
                     // parserXML(file, doc, "dc:date", "date", false);
 
                     // IMPORTANTE, HAY QUE QUITAR LOS GUIONES
                     parseCoordinates(file,doc,"ows:LowerCorner");
+                    parseCoordinates(file,doc,"ows:UpperCorner");
 
                     if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
                         System.out.println("adding " + file);
@@ -214,7 +217,20 @@ public class IndexFiles {
 
     }
 
-    private static void parserXML(File file, Document doc, String tag, String campo, boolean textField) {
+
+
+    /**
+     * Parses an XML file and extracts content from specific XML tags to index in a Lucene Document.
+     *
+     * @param file       The XML file to be parsed.
+     * @param doc        The Lucene Document where extracted content will be added.
+     * @param tag        The XML tag to search for within the document.
+     * @param campo      The name of the field in the Lucene Document where the content will be stored.
+     * @param isTextField If true, the content will be stored as a TextField; if false, it will be stored as a StringField.
+     * @param store      If true, the field will be stored in the index; if false, it won't be stored (only indexed for searching).
+     * @throws IOException If there is a low-level I/O error while reading the XML file.
+     */
+    private static void parserXML(File file, Document doc, String tag, String campo, boolean isTextField,boolean store) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -225,12 +241,23 @@ public class IndexFiles {
             for (int i = 0; i < n; i++) {
                 org.w3c.dom.Node nodo = nList.item(i);
                 String contenido = nodo.getTextContent();
-
+                if(campo == "created" || campo == "issued"){
+                    contenido = contenido.replaceAll("[/\\-]", ""); // Elimina "/" y "-"
+                }
                 System.out.println(campo + ":" + contenido);
-                if (textField) {
-                    doc.add(new StringField(campo, contenido, Field.Store.NO));
+                if (isTextField) {
+                    if(store){
+                        doc.add(new TextField(campo, contenido, Field.Store.YES));
+                    }else{
+                        doc.add(new TextField(campo, contenido, Field.Store.NO));
+                    }
                 } else {
-                    doc.add(new StringField(campo, contenido, Field.Store.YES));
+                    if(store){
+                        doc.add(new StringField(campo, contenido, Field.Store.YES));
+                    }else{
+                        doc.add(new StringField(campo, contenido, Field.Store.NO));
+                    }
+                    
                 }
             }
         } catch (ParserConfigurationException e) {
