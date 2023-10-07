@@ -86,7 +86,7 @@ public class SearchFiles {
         int numTotalHits = Math.toIntExact(results.totalHits.value);
         // Sort by score in descending order (higher scores first)
 
-
+ 
         if (numTotalHits > 0) {
             ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
             StoredFields storedFields = searcher.storedFields();
