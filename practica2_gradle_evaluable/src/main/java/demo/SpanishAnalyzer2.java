@@ -126,13 +126,24 @@ public final class SpanishAnalyzer2 extends StopwordAnalyzerBase {
         return new LowerCaseFilter(in);
     }
 
-    public static CharArraySet createStopSet3 () {
-        try {
-            CharArraySet stopSet = WordlistLoader.getSnowballWordSet(new FileReader("spanish_stop.txt"));
-            return stopSet;
-        } catch (IOException ex) {
-            throw new RuntimeException("Unable to load default stopword set");
-        }
+//    public static CharArraySet createStopSet3 () {
+//        try {
+//            CharArraySet stopSet = WordlistLoader.getSnowballWordSet(new FileReader("spanish_stop.txt"));
+//            return stopSet;
+//        } catch (IOException ex) {
+//            throw new RuntimeException("Unable to load default stopword set");
+//        }
+//    }
+
+        public static CharArraySet createStopSet3 () {
+
+        String[] stopWords = {
+                "el", "la", "los", "las", "un", "una", "de", "para", "por", "con", "sin", "entre", "bajo", "sobre",
+                "según", "al", "del", "a", "y", "o", "pero", "si", "como", "más", "menos", "mucho", "poco", "cuando", "donde"
+        };
+        CharArraySet stopSet = StopFilter .makeStopSet ( stopWords );
+
+        return stopSet;
     }
 
 }

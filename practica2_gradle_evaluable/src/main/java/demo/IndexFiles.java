@@ -159,6 +159,7 @@ public class IndexFiles {
                     parserXML(file, doc, "dc:title", "title", true,false);
                     parserXML(file, doc, "dc:description", "description", true,false);
                     parserXML(file, doc, "dc:date", "date", false,false);
+                    parserXML(file, doc, "dc:language", "language", false,false);
 
                     if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
                         System.out.println("adding " + file);
@@ -197,10 +198,18 @@ public class IndexFiles {
                 org.w3c.dom.Node nodo = nList.item(i);
                 String contenido = nodo.getTextContent();
 
-                if(campo == "type"){
+                if(Objects.equals(campo, "type")){
                     contenido = contenido.substring(contenido.indexOf("-") + 1).trim();
                 }
-                if(campo == "created" || campo == "issued"){
+                if(Objects.equals(campo, "language")){
+                    //Si no al buscar por language:es, lo detecta como una palabra vacia y no busca
+                    if(Objects.equals(contenido, "es")){
+                        contenido = "spanish";
+                    }else if(Objects.equals(contenido, "en")){
+                        contenido = "english";
+                    }
+                }
+                if(Objects.equals(campo, "created") || Objects.equals(campo, "issued")){
                     contenido = contenido.replaceAll("[/\\-]", ""); // Elimina "/" y "-"
                 }
                 System.out.println(campo + ":" + contenido);
