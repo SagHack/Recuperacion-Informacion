@@ -199,11 +199,14 @@ public class IndexFiles {
                 String contenido = nodo.getTextContent();
 
                 if(Objects.equals(campo, "type")){
-                    contenido = contenido.substring(contenido.indexOf("-") + 1).trim();
+                    int dashIndex = contenido.indexOf("-");
+                    if (dashIndex != -1 && dashIndex < contenido.length() - 1) {
+                        contenido = contenido.substring(dashIndex + 1).trim();
+                    }
                 }
                 if(Objects.equals(campo, "language")){
                     //Si no al buscar por language:es, lo detecta como una palabra vacia y no busca
-                    if(Objects.equals(contenido, "es")){
+                    if(Objects.equals(contenido, "es") || Objects.equals(contenido, "spa")){
                         contenido = "spanish";
                     }else if(Objects.equals(contenido, "en")){
                         contenido = "english";

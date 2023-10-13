@@ -7,32 +7,35 @@ import opennlp.tools.postag.POSTaggerME;
 
 import opennlp.tools.util.Span;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Query;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.FSDirectory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.FileInputStream;
+import java.io.*;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-  
-import java.io.File;
 
 import java.text.Normalizer;
 
 public class SearchFiles {
+    private static final int INITIAL_HITS = 1000;
+
     public enum Estado {
         TIPO_TRABAJO,
         IDIOMA,
@@ -213,7 +216,7 @@ public class SearchFiles {
 
 
 
-        public static void procesarNecesidadInformacion(String input,String identifier) throws IOException, ParseException {
+        public static BooleanQuery procesarNecesidadInformacion(String input, String identifier) throws IOException, ParseException {
         Estado prevEstado = Estado.SIN_DETERMINAR;
         Estado estado = Estado.SIN_DETERMINAR;
 
@@ -420,52 +423,99 @@ public class SearchFiles {
                 }else{
                     addQuery(String.valueOf(subquery));
                 }
-                
             }
-
-            // Cuando salimos del bucle añadimos las query que nos hemos dejado por añadir
-            //addQuery(subquery);
+//            addQueryAcercaDE("type:pfc");
             // Cleanup
             nameFinder.clearAdaptiveData();
             System.out.println("Generated Boolean Query: " + boolQuery.build().toString());
+            return boolQuery.build();
 
     }
-    
+
+
+    public static void showResults(IndexSearcher searcher, Query query, BufferedWriter writer,String identifier_query) throws IOException {
+        System.out.println("Searching for: " + query.toString());
+        Sort sort = new Sort(new SortField(null, SortField.Type.SCORE, true));
+        TopDocs results = searcher.search(query, INITIAL_HITS,sort);
+        int numTotalHits = Math.toIntExact(results.totalHits.value);
+        writer.write("HOLA");
+        // Sort by score in descending order (higher scores first)
+
+
+        if (numTotalHits > 0) {
+            System.out.println("HAY HITS");
+            ScoreDoc[] hits = searcher.search(query, numTotalHits).scoreDocs;
+            StoredFields storedFields = searcher.storedFields();
+            for (int i = 0; i < hits.length; i++) {
+                org.apache.lucene.document.Document doc = storedFields.document(hits[i].doc);
+                String identifier = doc.get("identifier");
+                String resultLine = (i + 1) + ". " + (identifier != null ? identifier : "No identifier for this element.");
+                writer.write(identifier_query + "   " + resultLine);
+                writer.newLine();
+
+//                String additionalInfoLine = "\tdoc=" + hits[i].doc + " score=" + hits[i].score;
+//                writer.write(additionalInfoLine);
+//                writer.newLine();
+            }
+        }
+    }
 
 
 
+public static void auxiliar(IndexSearcher searcher,BufferedWriter writer) throws IOException, ParseException {
+    BooleanQuery q1 = procesarNecesidadInformacion("¿Hay trabajos de fin de grado o trabajos de fin de master","101-4"); //que traten sobre la animación o visión por computador publicados en los últimos 20 años, en lenguaje español?
+    BooleanQuery q2 = procesarNecesidadInformacion("Quiero buscar trabajos de veterinaria relacionados con especies felinas (gatos) o especies caninas (perros) entre 2012 y 2018.","106-4");
+    BooleanQuery q3 = procesarNecesidadInformacion("Trabajos de fin de grado o master realizados o dirigidos por algún miembro de la familia López en el departamento de Informática.", "206-4");
+    BooleanQuery q4 = procesarNecesidadInformacion("¿Qué trabajos hay sobre arte? Tienen que ser de arte aragonés, y que no traten temas posteriores al siglo XIX.","209-2");
+    BooleanQuery q5 = procesarNecesidadInformacion("Estoy realizando un estudio sobre la aplicación de algoritmos de búsqueda en entornos relacionados con la medicina, por ejemplo encontrar cadenas de proteinas o hallar pacientes similares basándose en sus síntomas.","305-4");
+    showResults(searcher,q1,writer,"101-4");
+//    showResults(searcher,q2,writer,"106-4");
+//    showResults(searcher,q3,writer,"209-2");
+//    showResults(searcher,q4,writer,"101-4");
+//    showResults(searcher,q5,writer,"305-4");
+
+}
 
 
 
 
     public static void main(String[] args) throws Exception {
+        String index = "index";
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(index)));
+        IndexSearcher searcher = new IndexSearcher(reader);
         try {
+            // Create a BufferedWriter for the file
+            BufferedWriter writer = new BufferedWriter(new FileWriter("resultados.txt"));
+
             File xmlFile = new File("necesidadesInformacion.xml");
             FileInputStream inputStream = new FileInputStream(xmlFile);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            InputStreamReader reader_file = new InputStreamReader(inputStream, StandardCharsets.UTF_8); // Especificar la codificación UTF-8
 
+
+
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            // Specify the character encoding when parsing the file
-            Document doc = dBuilder.parse(inputStream, StandardCharsets.UTF_8.name());
+
+            Document doc = dBuilder.parse(new InputSource(reader_file));
 
             doc.getDocumentElement().normalize();
             NodeList informationNeedList = doc.getElementsByTagName("informationNeed");
 
-            for (int i = 0; i < 1; i++) { // informationNeedList.getLength()
-                Node node = informationNeedList.item(i);
-                if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    Element element = (Element) node;
-                    String identifier = element.getElementsByTagName("identifier").item(0).getTextContent();
-                    String text = element.getElementsByTagName("text").item(0).getTextContent();
 
-                    //procesarNecesidadInformacion(text,identifier);
-                    //procesarNecesidadInformacion("¿Hay trabajos de fin de grado o trabajos de fin de master que traten sobre la animación o visión por computador publicados en los últimos 20 años, en lenguaje español?",identifier);
-                   //procesarNecesidadInformacion("Quiero buscar trabajos de veterinaria relacionados con especies felinas (gatos) o especies caninas (perros) entre 2012 y 2018.",identifier);
-                    //procesarNecesidadInformacion("Trabajos de fin de grado o master realizados o dirigidos por algún miembro de la familia López en el departamento de Informática.", identifier);
-                  //procesarNecesidadInformacion("¿Qué trabajos hay sobre arte? Tienen que ser de arte aragonés, y que no traten temas posteriores al siglo XIX.",identifier);
-                   procesarNecesidadInformacion("traten cadenas de proteinas o hallar pacientes similares basándose en sus síntomas.",identifier);
-                }
-            }
+//            for (int i = 0; i < informationNeedList.getLength(); i++) {
+//                Node node = informationNeedList.item(i);
+//                if (node.getNodeType() == Node.ELEMENT_NODE) {
+//                    Element element = (Element) node;
+//                    String identifier = element.getElementsByTagName("identifier").item(0).getTextContent();
+//                    String text = element.getElementsByTagName("text").item(0).getTextContent();
+//                    Query q = procesarNecesidadInformacion(text,identifier);
+//                    showResults(searcher,q,writer,identifier);
+//                }
+//            }
+            auxiliar(searcher,writer);
+            writer.close();
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
