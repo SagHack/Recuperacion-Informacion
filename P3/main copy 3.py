@@ -1,0 +1,198 @@
+import sys
+import pandas as pd
+
+# Verificar que se proporcionen suficientes argumentos
+if len(sys.argv) != 7:
+    print("Uso: python script.py -qrels <qrelsFileName> -results <resultsFileName> -output <outputFileName>")
+    sys.exit(1)
+
+# Inicializar variables 
+qrelsFileName = None
+resultsFileName = None
+outputFileName = None
+
+# Iterar sobre los argumentos
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i] == '-qrels':
+        qrelsFileName = sys.argv[i + 1]
+    elif sys.argv[i] == '-results':
+        resultsFileName = sys.argv[i + 1]
+    elif sys.argv[i] == '-output':
+        outputFileName = sys.argv[i + 1]
+    i += 2
+
+# Verificar que se proporcionen todos los argumentos necesarios
+if None in (qrelsFileName, resultsFileName, outputFileName):
+    print("Faltan argumentos. Uso: python script.py -qrels <qrelsFileName> -results <resultsFileName> -output <outputFileName>")
+    sys.exit(1)
+
+# Leer el archivo en un DataFrame sin nombres de columna
+df_qrels = pd.read_csv(qrelsFileName, sep='\t', header=None)
+df_results = pd.read_csv(resultsFileName, sep='\t', header=None)
+
+# Acceder a columnas por índice numérico
+qrels_informationNeed = df_qrels[0]
+qrels_documentId = df_qrels[1]
+qrels_relevancy = df_qrels[2]
+
+results_informationNeed = df_results[0]
+results_documentId = df_results[1]
+
+def calculate_true_positives(id, qrels_informationNeed, qrels_documentId, qrels_relevancy, results_informationNeed, results_documentId):
+    tp = sum(1 for i in range(len(results_informationNeed)) if results_documentId[i] == id and results_informationNeed[i] in qrels_informationNeed and qrels_relevancy[qrels_informationNeed.index(results_informationNeed[i])] == 1)
+    return tp
+
+def calculate_true_negatives(id, qrels_informationNeed, qrels_documentId, results_informationNeed, results_documentId):
+    tn = sum(1 for i in range(len(results_informationNeed)) if results_documentId[i] == id and results_informationNeed[i] not in qrels_informationNeed)
+    return tn
+
+def calculate_false_positives(id, qrels_informationNeed, qrels_documentId, results_informationNeed, results_documentId):
+    fp = sum(1 for i in range(len(results_informationNeed)) if results_documentId[i] == id and results_informationNeed[i] not in qrels_informationNeed)
+    return fp
+
+def calculate_false_negatives(id, qrels_informationNeed, qrels_documentId, qrels_relevancy, results_informationNeed, results_documentId):
+    fn = sum(1 for i in range(len(qrels_informationNeed)) if qrels_documentId[i] == id and qrels_relevancy[i] == 1 and qrels_informationNeed[i] not in results_informationNeed)
+    return fn
+
+
+
+id = "documento_id_que_deseas_comparar"
+tp = calculate_true_positives(id, qrels_informationNeed, qrels_documentId, qrels_relevancy, results_informationNeed, results_documentId)
+tn = calculate_true_negatives(id, qrels_informationNeed, qrels_documentId, results_informationNeed, results_documentId)
+fp = calculate_false_positives(id, qrels_informationNeed, qrels_documentId, results_informationNeed, results_documentId)
+fn = calculate_false_negatives(id, qrels_informationNeed, qrels_documentId, qrels_relevancy, results_informationNeed, results_documentId)
+
+print(f"True Positives: {tp}")
+print(f"True Negatives: {tn}")
+print(f"False Positives: {fp}")
+print(f"False Negatives: {fn}")
+
+
+
+def buscar_documento(informationNeed,id_documento):
+    tam_qrels = int(len(qrels_informationNeed))
+    for i in range(tam_qrels):
+        if(id_documento == qrels_documentId[i] and informationNeed == qrels_informationNeed[i]):
+            return i
+    return -1
+
+#funcion auxiliar que calcula la precision con formato de 3 decimales
+def calcular_precision(total_relevantes,total_no_relevantes):
+    return "{:.3f}".format(total_relevantes / (total_relevantes + total_no_relevantes))
+
+#funcion auxiliar que calcula el recall con formato de 3 decimales
+def calcular_recall(total_relevantes, total_no_relevantes, tam):
+    recall = total_relevantes / tam
+    #recall = total_relevantes / cont
+    return "{:.3f}".format(recall)
+
+#funcion auxiliar que calcula el f1 con formato de 3 decimales
+def calcular_f1(precision,recall):
+    return "{:.3f}".format(2*((precision*recall)/(precision+recall)))
+
+#funcion auxiliar que calcula el prec@10 con formato de 3 decimales
+def calcular_prec10(total_relevantes_a_10):
+    return "{:.3f}".format(total_relevantes_a_10/10)
+
+#funcion auxiliar que calcula el average_precision
+def calcular_average_precision(precision, recall):
+    return 0
+
+def imprimir_informacion(t_rel, t_no_rel, tam):
+    archivo.write("---------------------\n")
+#     true_positives = calcular_true_positives(qrels_inforamtionNeed, qrels_relevancy, results_informationNeed, results_documentId)
+#     archivo.write(f"True Positives: {true_positives}\n")
+#     true_negatives = calcular_true_negatives(qrels_inforamtionNeed, qrels_relevancy, results_informationNeed, results_documentId)
+#     archivo.write(f"True Negatives: {true_negatives}\n")
+    
+#     archivo.write("---------------------\n")
+    
+    
+#     archivo.write("INFORMATION_NEED " + str(prev_value) + "\n")
+
+#     precision = calcular_precision(t_rel,t_no_rel)
+#     archivo.write("precision "+ str(precision) + "\n")
+
+#     #recall = calcular_recall(t_rel, t_no_rel, tam)
+#     #recall = 0.75
+#     recall = total_relevantes / tam
+#     archivo.write("recall "+ str(recall) + "\n")
+
+#     archivo.write("F1 "+ str(calcular_f1(float(precision),float(recall))) + "\n")
+
+#     precision10 = calcular_prec10(total_relevantes_a_10)
+#     archivo.write("prec@10 "+ str(precision10) + "\n")
+
+#     average_precision = calcular_average_precision(precision, recall)
+#     archivo.write("average_precision " + str(average_precision) + "\n")
+
+
+#     archivo.write("recall_precision\n")
+
+#     archivo.write("interpolated_recall_precision\n")
+ 
+#     archivo.write("\n")
+
+
+# ejecutar funcion buscar_docuemnto
+with open(outputFileName, "w") as archivo:
+    tam = int(len(results_documentId))
+    total_relevantes = 0
+    total_no_relevantes = 0
+    total_relevantes_a_10 = 0
+    prev_value = None
+    for i in range(tam):
+        if results_informationNeed[i] != prev_value:
+            if prev_value is not None:
+                
+
+#                 falsos_negativos = encontrar_falsos_negativos(qrels_relevancy, results_informationNeed, results_documentId)
+                imprimir_informacion(total_relevantes, total_no_relevantes, tam)
+#                 print("Total elementos iguales:", count)
+#                 print("total relevantes: ", total_relevantes)
+#                 print("total no relevantes: ", total_no_relevantes)
+    
+                
+            print("informationNeed: ", results_informationNeed[i], " documentId: ", results_documentId[i], " relevancy: ", qrels_relevancy[i])
+            prev_value = results_informationNeed[i]
+            count = 1
+            total_relevantes = 0
+            total_no_relevantes = 0
+            total_relevantes_a_10 = 0
+        else:
+            count += 1
+
+#         index = buscar_documento(results_informationNeed[i],results_documentId[i])
+#         print("informationNeed: ",results_informationNeed[i]," documentId: ",results_documentId[i]," relevancy: ",qrels_relevancy[index])
+
+        
+        
+#         if qrels_relevancy[index] ==0:
+#             #print("es no relevante")  #archivo.write("es no relevante\n")
+#             total_no_relevantes += 1
+#         else:
+#             #print("es relevante")     #archivo.write("es relevante\n")
+#             total_relevantes += 1
+#             if i < 10:
+#                 total_relevantes_a_10 += 1
+        
+#         if i == tam - 1:
+#             imprimir_informacion(total_relevantes, total_no_relevantes,falsos_negativos)
+#             print("total relevantes: ", total_relevantes)
+#             print("total no relevantes: ", total_no_relevantes)
+#             print("Total elementos iguales:", count)
+#         # si no coinciden o es el ultimo elemento de la lista
+    
+archivo.close()
+# # print("total recuperados: ",tam)
+# # print("total relevantes: ",total_relevantes)
+# # print("total no relevantes: ",total_no_relevantes)
+
+
+
+# # Construir y ejecutar el comando
+# # comando = f"java Evaluation -qrels {qrelsFileName} -results {resultsFileName} -output {outputFileName}"
+# # print(f"Ejecutando comando: {comando}")
+
+# # Aquí puedes usar subprocess para ejecutar el comando si es necesario
