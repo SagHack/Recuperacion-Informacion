@@ -163,7 +163,47 @@ class RelevanceData:
                 precision.pop(0)
             interpolated_precision.append(max_precision)
 
+        total_relevantes = 0
+        total_no_relevantes = 0
+        rec, prec = self.recall_precision(iNeed)
+        k = 0
+        j = 0.0
+        print ("rec = ", prec)
+        for i in range(11):
+            
+            if self.is_relevant(iNeed, self.df_results["document_id"][i]):
+                total_relevantes += 1
+                print("+")
+            else:
+                print("-")
+                
+                total_no_relevantes += 1
+                
+                #print("-----> no relevante -> ", j)
+                k = k + 1
+            if(k < len(prec)):
+                #buscamos el maximo del vector de los elemntos que quedan a continuacion de la posicion k
+                j = max(prec[k:])
+                print("k = ", k, "j = ", j)
+                interpolated_precision[i] = j
+            else:
+                print("k = ", k, "prec = ", 0)
+                interpolated_precision[i] = 0
+
+            
+            # while k < len(prec) and prec[k] == 0:
+            #         #k += 1
+            #         j = j
+            #     if k < len(prec):
+            #         interpolated_precision.append(prec[k])
+            #         #k += 1
+            #     else:
+            #         interpolated_precision.append(0)
+        print("----")
+
         return interpolated_recall, interpolated_precision
+    
+
 
 
 
