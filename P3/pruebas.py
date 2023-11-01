@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 from collections import Counter
-
+import graficas
 
 class RelevanceData:
     def __init__(self, qrels_file, results_file, output_file):
@@ -17,9 +17,6 @@ class RelevanceData:
         self.total_MAP = 0
         self.total_interpolated_recall = []
         self.total_interpolated_precision = []
-        
-
-
 
     def vector_results(self):
         return self.df_results
@@ -168,44 +165,14 @@ class RelevanceData:
         rec, prec = self.recall_precision(iNeed)
         k = 0
         j = 0.0
-        print ("rec = ", prec)
         for i in range(11):
-            
-            if self.is_relevant(iNeed, self.df_results["document_id"][i]):
-                total_relevantes += 1
-                print("+")
-            else:
-                print("-")
-                
-                total_no_relevantes += 1
-                
-                #print("-----> no relevante -> ", j)
-                k = k + 1
-            if(k < len(prec)):
-                #buscamos el maximo del vector de los elemntos que quedan a continuacion de la posicion k
-                j = max(prec[k:])
-                print("k = ", k, "j = ", j)
-                interpolated_precision[i] = j
-            else:
-                print("k = ", k, "prec = ", 0)
-                interpolated_precision[i] = 0
-
-            
-            # while k < len(prec) and prec[k] == 0:
-            #         #k += 1
-            #         j = j
-            #     if k < len(prec):
-            #         interpolated_precision.append(prec[k])
-            #         #k += 1
-            #     else:
-            #         interpolated_precision.append(0)
-        print("----")
-
+            max_precision = 0
+            for j in range(len(rec)):
+                if rec[j] >= i/10 and prec[j] > max_precision:
+                    max_precision = max(max_precision, prec[j])
+            interpolated_precision[i] = max_precision
+                       
         return interpolated_recall, interpolated_precision
-    
-
-
-
 
 
     def imprimirInfo(self,iNeed):
@@ -252,7 +219,6 @@ class RelevanceData:
             i += 1
 
         resultado += "\n"
-
         return resultado  
 
     def imprimir_total(self):
@@ -287,6 +253,7 @@ def main():
     with open(relevance_data.output_file, "w") as archivo:
         archivo.write(resultado)
         archivo.write(relevance_data.imprimir_total())
+    graficas.generarGrafica(output_file)
     archivo.close()
 
 main()
