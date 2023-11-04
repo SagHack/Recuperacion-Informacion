@@ -35,8 +35,9 @@ def comprobar_antes_ejecutar():
     
 class RelevanceData:
     def __init__(self, qrels_file, results_file, output_file):
-        self.df_qrels = pd.read_csv(qrels_file, sep='\t', header=None, names=["information_need", "document_id", "relevancy"])
+        self.df_qrels = pd.read_csv(qrels_file, sep='\t', header=None, names=["information_need", "document_id", "relevancy"], nrows=50)
         self.df_results = pd.read_csv(results_file, sep='\t', header=None, names=["information_need", "document_id"])
+        # self.df_results = pd.read_csv(results_file, sep='\t', header=None, names=["information_need", "document_id"])
         self.output_file = output_file
         
         self.total_iNeed = 0
@@ -103,23 +104,25 @@ class RelevanceData:
         tp = self.true_positives(iNeed)
         return n_no_relevantes - tp
     
-    def precision(self, iNeed):
-        tp = self.true_positives(iNeed)
-        fp = self.false_positives(iNeed)
+    def precision(self, iNeed, tp, fp):
+        # tp = self.true_positives(iNeed)
+        # fp = self.false_positives(iNeed)
         if (tp + fp) == 0:
             return 0.0
         return tp / (tp + fp)
 
-    def recall(self, iNeed):
-        tp = self.true_positives(iNeed)
-        fn = self.false_negatives(iNeed)
+    def recall(self, iNeed, tp, fn):
+        # tp = self.true_positives(iNeed)
+        # fn = self.false_negatives(iNeed)
         if (tp + fn) == 0:
             return 0.0
         return tp / (tp + fn)
     
-    def f1(self,iNeed):
-        precision = self.precision(iNeed)
-        recall = self.recall(iNeed)
+    def f1(self,iNeed, precision, recall):
+        # precision = self.precision(iNeed)
+        # recall = self.recall(iNeed)
+        print("precision: ", precision)
+        print("recall: ", recall)
         return (2*precision*recall) / (precision + recall)
 
     def prec_at_10(self, iNeed):
@@ -190,8 +193,6 @@ class RelevanceData:
                 precision.pop(0)
             interpolated_precision.append(max_precision)
 
-        total_relevantes = 0
-        total_no_relevantes = 0
         rec, prec = self.recall_precision(iNeed)
         k = 0
         j = 0.0
@@ -206,10 +207,23 @@ class RelevanceData:
 
 
     def imprimirInfo(self,iNeed):
+
+        # Se obtienen los true positives
+        tp = self.true_positives(iNeed)
+        print("tp: ", tp)
+
+        # Se obtienen los false positives  
+        fp = self.false_positives(iNeed)
+        print("fp: ", fp)
+
+        # Se obtienen los false negatives
+        fn = self.false_negatives(iNeed)
+        print("fn: ", fn)
+
         self.total_iNeed +=1
-        precision = self.precision(iNeed)
-        recall = self.recall(iNeed)
-        f1 = self.f1(iNeed)
+        precision = self.precision(iNeed, tp, fp)
+        recall = self.recall(iNeed, tp, fn)
+        f1 = self.f1(iNeed, precision, recall)
         prec_10 = self.prec_at_10(iNeed)
         # devuelve array de average_precision, recall_precision y interpolated_recall_precision
         average_precision = self.average_precision(iNeed)
@@ -252,6 +266,7 @@ class RelevanceData:
         return resultado  
 
     def imprimir_total(self):
+        print("total")
         resultado = "TOTAL\n"
         resultado += "precision {:.3f}\n".format(self.total_precision / self.total_iNeed)
         resultado += "recall {:.3f}\n".format(self.total_recall / self.total_iNeed)
@@ -284,7 +299,7 @@ def main():
     with open(relevance_data.output_file, "w") as archivo:
         archivo.write(resultado)
         archivo.write(relevance_data.imprimir_total())
-    graficas.generarGrafica(output_file)
+    # graficas.generarGrafica(output_file)
     archivo.close()
 
 main()
