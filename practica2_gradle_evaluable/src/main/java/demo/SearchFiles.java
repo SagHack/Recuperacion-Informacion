@@ -7,6 +7,7 @@ import opennlp.tools.postag.POSTaggerME;
 
 import opennlp.tools.util.Span;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.StoredFields;
@@ -25,8 +26,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.text.Collator;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -57,7 +60,7 @@ public class SearchFiles {
 
     static {
         // Inicializar el mapa de idiomas con códigos
-        idiomasConCodigo.put("español", "spanish");
+        idiomasConCodigo.put("espaol", "spanish");
         idiomasConCodigo.put("ingles", "english");
         idiomasConCodigo.put("chino", "chinese");
         idiomasConCodigo.put("italiano", "italian");
@@ -122,37 +125,40 @@ public class SearchFiles {
 
 
         public static boolean esUnIdioma(String idioma) {
-            List<String> listaIdiomasNormalizada = List.of("español", "ingles", "chino", "italiano","frances", "aleman", "portugues", "japones", "coreano");
-            return listaIdiomasNormalizada.contains(idioma);
+            if(idioma.equals("lenguaje")){
+                return true;
+            }else{
+                return false;
+            }
         }
 
         public static String obtenerCodigoDeIdioma(String idioma) {
-            // Normalizar los caracteres y convertir a minúsculas antes de buscar el código.
-            return idiomasConCodigo.get(idioma);
+            String normalizedIdioma = idioma.replaceAll("[^\\p{ASCII}]", "");
+            normalizedIdioma = normalizedIdioma.toLowerCase();
+            return idiomasConCodigo.get(normalizedIdioma);
         }
 
 
-        public static boolean esUnVerboAcercaDelTrabajo(String verbo) { //Se podría ampliar la lista de verbos simplemente modificando esta lista, y funcionaria para todos los demás
-
-            List<String> listaIdiomasNormalizada = List.of("traten", "sobre", "relacionados", "ser");
-
-            // Normalizamos los caracteres y los convertimos a minúsculas antes de comparar.
-            verbo = Normalizer.normalize(verbo, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "").toLowerCase();
-            return listaIdiomasNormalizada.contains(verbo);
+        public static boolean esUnVerboAcercaDelTrabajo(String verbo) {
+            //Se podría ampliar la lista de verbos simplemente modificando esta lista, y funcionaria para todos los demás
+            List<String> listaVerbos = List.of("traten", "sobre", "relacionados", "ser");
+            return listaVerbos.contains(verbo);
         }
 
         public static boolean esUnaPalabraFecha(String palabra) {
-            List<String> listaPalabras = List.of("publicados", "entre","ultimos");
+            List<String> listaPalabras = List.of( "entre","ultimos","últimos","ltimos");
+            palabra = palabra.replaceAll("[^\\p{ASCII}]", "");
             return listaPalabras.contains(palabra);
         }
 
         public static boolean esUnaPersona(String palabra, String[] names) {
+            //Iteramos sobre el array de nombres que hemos obtenido con el nameFinder
             for (String name : names) {
                 if (name.equals(palabra)) {
-                    return true; // Found a match
+                    return true;
                 }
             }
-            return false; // Word not found in the names array
+            return false;
         }
 
         public static boolean esUnEjemplo(String palabra){
@@ -170,7 +176,8 @@ public class SearchFiles {
         }
 
         public static boolean esMaster(String word) {
-            return word.equalsIgnoreCase("máster") || word.equalsIgnoreCase("master") || word.equalsIgnoreCase("tfm");
+            word = word.replaceAll("[^\\p{ASCII}]", "");
+            return word.equalsIgnoreCase("máster") || word.equalsIgnoreCase("master") || word.equalsIgnoreCase("tfm") || word.equalsIgnoreCase("mster");
         }
 
         public static boolean esTFG(String word) {
@@ -197,6 +204,8 @@ public class SearchFiles {
                 Integer numeroDecimal = entry.getKey();
                 String numeroRomanoEnMap = entry.getValue();
                 if (numeroRomano.equals(numeroRomanoEnMap)) {
+                    consulta.append(" OR ");
+                    consulta.append("title:").append(numeroRomanoEnMap);
                     out = true;
                 }else{
                     if(primerElemento){
@@ -213,32 +222,34 @@ public class SearchFiles {
             return consulta.toString();
         }
 
-
-
-
         public static BooleanQuery procesarNecesidadInformacion(String input, String identifier) throws IOException, ParseException {
+        boolQuery = new BooleanQuery.Builder();  
         Estado prevEstado = Estado.SIN_DETERMINAR;
         Estado estado = Estado.SIN_DETERMINAR;
 
-        // Load the pretrained model  
+        // Cargamos el modelo de POS tagger
         POSModel model = new POSModelLoader().load(new File("opennlp-es-pos-perceptron-pos-es.model"));  
   
-        // Initialize the POS tagger  
+        // Inicializamos el POS tagger
         POSTaggerME tagger = new POSTaggerME(model);  
 
-        // Load your custom Name Finder model
+        // Cargamos el modelo para identificar personas
         TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(new File("es-ner-person.bin"));
 
-        // Initialize the Name Finder
+        // Inicializamos el nameFinder
         NameFinderME nameFinder = new NameFinderME(nameFinderModel);
-        input = input.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ]", "");
+        input = input.replaceAll("[¿?.,]", "");
 
 
-
-
-        
-        // Input text  
         String[] tokens = input.split(" ");
+        String normalizedToken = "";
+        for (int k=0;k<tokens.length;k++) {
+            normalizedToken = tokens[k].replaceAll("[^\\p{ASCII}]", "");
+            // Hay problemas con las tildes, y si no esta con tilde el nameFinder no lo reconoce.
+            if(normalizedToken.equals("Lpez")){
+                tokens[k] = "López";
+            }
+        }
         // Perform POS tagging  
         String[] tags = tagger.tag(tokens);  
 
@@ -246,45 +257,48 @@ public class SearchFiles {
         Span[] nameSpans = nameFinder.find(tokens);
         String[] names = new String[nameSpans.length];
 
+        // Guardamos en el array names todos los nombres
         for (int i = 0; i < nameSpans.length; i++) {
             int start = nameSpans[i].getStart();
             int end = nameSpans[i].getEnd();
             names[i] = String.join(" ", Arrays.copyOfRange(tokens, start, end));
         }
 
-        String query = "";
         StringBuilder subquery = new StringBuilder();
-        String token = "";
-
         boolean es_una_or = false; 
         boolean es_una_not = false;
+
         // Recorremos todos los tokens
         for(int i = 0;i<tokens.length;i++) {
-            if (Objects.equals(tags[i], "CC") && estado != Estado.SIN_DETERMINAR) { //Es una OR
+            //Es una OR
+            if (Objects.equals(tags[i], "CC") && estado != Estado.SIN_DETERMINAR) {
                 if (Objects.equals(tokens[i], "o")) {
                     subquery.append(" OR ");
                     es_una_or = true;
-                    //System.out.println("OOOOOR");
                     i++;
                 }
             }
-            
-            if (Objects.equals(tags[i], "RN")) { //Es una NOT){
+            // Es una NOT
+            if (Objects.equals(tags[i], "RN")) {
                 es_una_not = true;
                 prevEstado = estado;
                 // Añado la subquery a la global
-                if(prevEstado == Estado.ACERCA_DE){addQueryAcercaDE(String.valueOf(subquery));
-                }else{addQuery(String.valueOf(subquery));}
+                if(prevEstado == Estado.ACERCA_DE){
+                    addQueryAcercaDE(String.valueOf(subquery));
+                }else{
+                    addQuery(String.valueOf(subquery));
+                }
                 subquery = new StringBuilder("");
                 estado = Estado.SIN_DETERMINAR;
             }
 
             //System.out.println("ITERACION: " + estado + " -> " + tokens[i] + "OR:" +  es_una_or);
 
-            if (esUnIdioma(tokens[i]) || (es_una_or && estado == Estado.IDIOMA)) { // Lo hemos hecho más global, ya que no tiene por que estar siempre precedida por lenguaje
+            if (esUnIdioma(tokens[i]) || (es_una_or && estado == Estado.IDIOMA)) {
                 prevEstado = estado;
                 estado = Estado.IDIOMA;
-            } else if (esUnaPalabraFecha(tokens[i]) || Objects.equals(tags[i], "Z") || (es_una_or && estado == Estado.FECHA)) { //Si es un numero
+                i++;
+            } else if (esUnaPalabraFecha(tokens[i]) || Objects.equals(tags[i], "Z") || (es_una_or && estado == Estado.FECHA)) {
                 prevEstado = estado;
                 estado = Estado.FECHA;
             } else if (esTrabajo(tokens[i]) || (es_una_or && estado == Estado.TIPO_TRABAJO)) { // Para detectar el tipo de trabajo o sobre que trata
@@ -309,7 +323,6 @@ public class SearchFiles {
                 estado = Estado.DEPARTAMENTO;
                 i++;
             }else if ((esUnVerboAcercaDelTrabajo(tokens[i]) || (es_una_or && estado == Estado.ACERCA_DE)) && !es_una_not) {
-                //System.out.println("SOBREEEEEEEEEEEE");
                 prevEstado = estado;
                 estado = Estado.ACERCA_DE;
                 if(esUnVerboAcercaDelTrabajo(tokens[i])){
@@ -322,7 +335,6 @@ public class SearchFiles {
                 }  
             }
 
-
             // Añado la subquery a la global
             if(prevEstado != estado && prevEstado != Estado.SIN_DETERMINAR){
                 if(prevEstado == Estado.ACERCA_DE){
@@ -334,39 +346,39 @@ public class SearchFiles {
                 es_una_not = false;
             }
 
-
-
-
             if (estado == Estado.IDIOMA) {
                 subquery.append("language:").append(obtenerCodigoDeIdioma(tokens[i]));
             } else if (estado == Estado.TIPO_TRABAJO) {
                 boolean out = false;
-                //Estamos ante un type or subject. Tenemos que encontrar el proximo NC para asegurarnos de cual de los dos es
+                //Estamos ante un type or subject.
                 while (i < tokens.length && !out) {
                     if (esMaster(tokens[i])) {
                         subquery.append("type:TFM");
-                        out=true; // salgo del bucle
+                        out=true;
                     } else if (esTFG(tokens[i])) {
                         subquery.append("type:TFG");
-                        out=true; // salgo del bucle
+                        out=true;
                     } else if (esProyectoFin(tokens[i])) {
                         subquery.append("type:PFC");
-                        out=true; // salgo del bucle
+                        out=true;
                     } else if (esTesis(tokens[i])) { //zaguan el id:1975
                         subquery.append("type:TESIS");
-                        out=true; // salgo del bucle
+                        out=true;
                     }else if (Objects.equals(tags[i], "NC")) { // Si es un Noun Common
                         if (!Objects.equals(tokens[i], "fin")) { // Si es distinto de fin, ya que fin es irrelevante porque no aporta info
                             subquery.append("subject:").append(tokens[i]);
-                            out = true; // salgo del bucle
+                            out = true;
                         }
                     }
-                    //System.out.println("BUCLE:" + tokens[i]);
                     if(!out){
                         i++;
                     }
                 }
             }else if (estado == Estado.PERSONA) {
+                // Como hay un problema con la tilde, la eliminamos y cambiamos por Lopez, si no pone un interrogante donde la ó
+                if(tokens[i].replaceAll("[^\\p{ASCII}]", "").equals("Lpez")){
+                    tokens[i] = "Lopez";
+                }
                 subquery = new StringBuilder("creator:" + tokens[i] + " OR " + "contributor:" + tokens[i]);
             }else if (estado == Estado.DEPARTAMENTO) {
                 while(!Objects.equals(tags[i], "NC") && i < tokens.length){
@@ -383,9 +395,12 @@ public class SearchFiles {
                 }
 
             }else if (estado == Estado.FECHA) {
-                if (Objects.equals(tokens[i - 1], "último") || Objects.equals(tokens[i - 1], "últimos")) { // los x últimos años
-                    int agnoInicio = agnoActual - Integer.parseInt(tokens[i]);
+                String tokenNormalizado = tokens[i].replaceAll("[^\\p{ASCII}]", "");
+
+                if (tokenNormalizado.equals("ltimos") || tokenNormalizado.equals("ltimo")) { // los x últimos años
+                    int agnoInicio = agnoActual - Integer.parseInt(tokens[i+1]);
                     subquery.append("date:[").append(Integer.toString(agnoInicio)).append(" TO ").append(Integer.toString(agnoActual)).append("]");
+                    i++;
                 } else { //Entonces estamos ante un año, o un rango pero especificando ambos años
                     boolean found = false;
                     i++;
@@ -395,7 +410,7 @@ public class SearchFiles {
                             subquery.append("date:[").append(tokens[i]).append(" TO ").append(tokens[j]).append("]");
                             found = true;
                             break;
-                        } else if (Objects.equals(tags[j], "NC")) { //Ya aunque haya un año, no es sobre el rango
+                        } else if (Objects.equals(tags[j], "NC")) { // Ya aunque haya un año, no es sobre el rango
                             found = false;
                             break;
                         }
@@ -424,12 +439,8 @@ public class SearchFiles {
                     addQuery(String.valueOf(subquery));
                 }
             }
-//            addQueryAcercaDE("type:pfc");
-            // Cleanup
             nameFinder.clearAdaptiveData();
-            System.out.println("Generated Boolean Query: " + boolQuery.build().toString());
             return boolQuery.build();
-
     }
 
 
@@ -438,9 +449,7 @@ public class SearchFiles {
         Sort sort = new Sort(new SortField(null, SortField.Type.SCORE, true));
         TopDocs results = searcher.search(query, INITIAL_HITS,sort);
         int numTotalHits = Math.toIntExact(results.totalHits.value);
-        writer.write("HOLA");
         // Sort by score in descending order (higher scores first)
-
 
         if (numTotalHits > 0) {
             System.out.println("HAY HITS");
@@ -449,34 +458,11 @@ public class SearchFiles {
             for (int i = 0; i < hits.length; i++) {
                 org.apache.lucene.document.Document doc = storedFields.document(hits[i].doc);
                 String identifier = doc.get("identifier");
-                String resultLine = (i + 1) + ". " + (identifier != null ? identifier : "No identifier for this element.");
-                writer.write(identifier_query + "   " + resultLine);
+                writer.write(identifier_query + "   " + identifier);
                 writer.newLine();
-
-//                String additionalInfoLine = "\tdoc=" + hits[i].doc + " score=" + hits[i].score;
-//                writer.write(additionalInfoLine);
-//                writer.newLine();
             }
         }
     }
-
-
-
-public static void auxiliar(IndexSearcher searcher,BufferedWriter writer) throws IOException, ParseException {
-    BooleanQuery q1 = procesarNecesidadInformacion("¿Hay trabajos de fin de grado o trabajos de fin de master","101-4"); //que traten sobre la animación o visión por computador publicados en los últimos 20 años, en lenguaje español?
-    BooleanQuery q2 = procesarNecesidadInformacion("Quiero buscar trabajos de veterinaria relacionados con especies felinas (gatos) o especies caninas (perros) entre 2012 y 2018.","106-4");
-    BooleanQuery q3 = procesarNecesidadInformacion("Trabajos de fin de grado o master realizados o dirigidos por algún miembro de la familia López en el departamento de Informática.", "206-4");
-    BooleanQuery q4 = procesarNecesidadInformacion("¿Qué trabajos hay sobre arte? Tienen que ser de arte aragonés, y que no traten temas posteriores al siglo XIX.","209-2");
-    BooleanQuery q5 = procesarNecesidadInformacion("Estoy realizando un estudio sobre la aplicación de algoritmos de búsqueda en entornos relacionados con la medicina, por ejemplo encontrar cadenas de proteinas o hallar pacientes similares basándose en sus síntomas.","305-4");
-    showResults(searcher,q1,writer,"101-4");
-//    showResults(searcher,q2,writer,"106-4");
-//    showResults(searcher,q3,writer,"209-2");
-//    showResults(searcher,q4,writer,"101-4");
-//    showResults(searcher,q5,writer,"305-4");
-
-}
-
-
 
 
     public static void main(String[] args) throws Exception {
@@ -484,14 +470,11 @@ public static void auxiliar(IndexSearcher searcher,BufferedWriter writer) throws
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(index)));
         IndexSearcher searcher = new IndexSearcher(reader);
         try {
-            // Create a BufferedWriter for the file
-            BufferedWriter writer = new BufferedWriter(new FileWriter("resultados.txt"));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("equipo014.txt"));
 
             File xmlFile = new File("necesidadesInformacion.xml");
             FileInputStream inputStream = new FileInputStream(xmlFile);
             InputStreamReader reader_file = new InputStreamReader(inputStream, StandardCharsets.UTF_8); // Especificar la codificación UTF-8
-
-
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -501,21 +484,17 @@ public static void auxiliar(IndexSearcher searcher,BufferedWriter writer) throws
             doc.getDocumentElement().normalize();
             NodeList informationNeedList = doc.getElementsByTagName("informationNeed");
 
-
-//            for (int i = 0; i < informationNeedList.getLength(); i++) {
-//                Node node = informationNeedList.item(i);
-//                if (node.getNodeType() == Node.ELEMENT_NODE) {
-//                    Element element = (Element) node;
-//                    String identifier = element.getElementsByTagName("identifier").item(0).getTextContent();
-//                    String text = element.getElementsByTagName("text").item(0).getTextContent();
-//                    Query q = procesarNecesidadInformacion(text,identifier);
-//                    showResults(searcher,q,writer,identifier);
-//                }
-//            }
-            auxiliar(searcher,writer);
+           for (int i = 0; i < informationNeedList.getLength(); i++) {
+               Node node = informationNeedList.item(i);
+               if (node.getNodeType() == Node.ELEMENT_NODE) {
+                   Element element = (Element) node;
+                   String identifier = element.getElementsByTagName("identifier").item(0).getTextContent();
+                   String text = element.getElementsByTagName("text").item(0).getTextContent();
+                   Query q = procesarNecesidadInformacion(text,identifier);
+                   showResults(searcher,q,writer,identifier);
+               }
+           }
             writer.close();
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -159,7 +159,9 @@ public class IndexFiles {
                     parserXML(file, doc, "dc:title", "title", true,false);
                     parserXML(file, doc, "dc:description", "description", true,false);
                     parserXML(file, doc, "dc:date", "date", false,false);
+                    parserXML(file, doc, "dc:subject", "subject", true,false);
                     parserXML(file, doc, "dc:language", "language", false,false);
+
 
                     if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
                         System.out.println("adding " + file);
@@ -196,12 +198,12 @@ public class IndexFiles {
             int n = nList.getLength();
             for (int i = 0; i < n; i++) {
                 org.w3c.dom.Node nodo = nList.item(i);
-                String contenido = nodo.getTextContent();
+                String contenido = nodo.getTextContent().toLowerCase();
 
                 if(Objects.equals(campo, "type")){
                     int dashIndex = contenido.indexOf("-");
-                    if (dashIndex != -1 && dashIndex < contenido.length() - 1) {
-                        contenido = contenido.substring(dashIndex + 1).trim();
+                    if (contenido.contains("-")) {
+                        contenido = contenido.substring(contenido.indexOf("-") + 1).trim();
                     }
                 }
                 if(Objects.equals(campo, "language")){
@@ -215,7 +217,8 @@ public class IndexFiles {
                 if(Objects.equals(campo, "created") || Objects.equals(campo, "issued")){
                     contenido = contenido.replaceAll("[/\\-]", ""); // Elimina "/" y "-"
                 }
-                System.out.println(campo + ":" + contenido);
+
+                //System.out.println(campo + ":" + contenido);
                 if (isTextField) {
                     if(store){
                         doc.add(new TextField(campo, contenido, Field.Store.YES));

@@ -292,6 +292,7 @@ def main():
     all_information_needs = vector_resultados["information_need"].unique()  
     resultado = ""
     for iNeed in all_information_needs:
+        print("Calculando métricas para la necesidad de información ", iNeed)
         relevance_data.df_results_50 = relevance_data.df_results[relevance_data.df_results["information_need"] == iNeed].head(50).reset_index(drop=True)
         resultado +=relevance_data.imprimirInfo(iNeed)
     with open(relevance_data.output_file, "w") as archivo:
