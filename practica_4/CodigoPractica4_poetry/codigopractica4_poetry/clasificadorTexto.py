@@ -1,3 +1,4 @@
+# ejecutar con: python clasificadorTexto.py -dir recordsdc -output resumen
 import argparse
 import sys
 import os
@@ -31,23 +32,6 @@ def parse_args():
         sys.exit(1)
     
     return zaguanDir, resultsDir
-
-
-# Función que hace un ls y muestra por pantalla los ficheros dentro de la carpeta.
-def listar_archivos_en_carpeta(carpeta):
-    try:
-        # Convertir la ruta relativa a absoluta si es necesario
-        carpeta = os.path.abspath(carpeta)
-
-        # Listar archivos en la carpeta
-        archivos = os.listdir(carpeta)
-
-        # Imprimir los nombres de los archivos
-        for archivo in archivos:
-            print(archivo)
-
-    except OSError as e:
-        print(f"Error al listar archivos en la carpeta {carpeta}: {e}")
 
 # Función que dado el path de un directorio y un nombre de un fichero, genera un csv con dicho nombre
 # con el titulo y descripcion de los ficheros del directorio pasado como argumento
