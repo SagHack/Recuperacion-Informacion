@@ -42,7 +42,7 @@ def generar_csv(zaguanDir, resultsDir):
     # Abre el archivo CSV en modo escritura
     with open(ruta_csv, mode="w", newline="", encoding="utf-8") as archivo_csv:
         escritor_csv = csv.writer(archivo_csv, delimiter=";")                       # escribe en el fichero csv con el delimitador ";"
-        escritor_csv.writerow(["archivo_xml", "titulo", "descripcion", "subject"])  # escribe la cabecera del csv
+        escritor_csv.writerow(["titulo", "descripcion", "subject"])  # escribe la cabecera del csv
 
         for archivo_xml in os.listdir(zaguanDir):   # Para cada fichero del directorio especificado
             
@@ -64,7 +64,7 @@ def generar_csv(zaguanDir, resultsDir):
                 subjects = [subject.text.replace("\n", " ") for subject in root.findall(".//dc:subject", namespaces=ns)]
 
                 # Escribe en el archivo CSV (cada palabra clave está separada entre ellas por ",")
-                escritor_csv.writerow([archivo_xml, titulo, descripcion, ", ".join(subjects)])
+                escritor_csv.writerow([titulo, descripcion, ", ".join(subjects)])
 
 
 # Función principal del main
