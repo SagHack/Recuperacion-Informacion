@@ -3,6 +3,8 @@ package IR.Practica5;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.VCARD;
 
+import java.io.FileOutputStream;
+
 /**
  * Ejemplo de como construir un modelo de Jena y añadir nuevos recursos 
  * mediante la clase Model
@@ -18,7 +20,15 @@ public class A_CreacionRDF {
         // Modelo modificado
         Model model = A_CreacionRDF.generarEjemploConTipo();
         // write the model in the standar output
-        model.write(System.out); 
+        //model.write(System.out);
+
+        // escribe el modelo en un archivo
+        try(FileOutputStream output = new FileOutputStream("nombre.rdf")){
+            model.write(output, "RDF/XML-ABBREV");
+            System.out.println("FICHERO CREADO");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 	
 	/**

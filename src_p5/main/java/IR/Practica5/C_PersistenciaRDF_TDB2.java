@@ -7,7 +7,7 @@ import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.tdb2.TDB2Factory;
-
+import org.apache.jena.riot.RDFDataMgr;
 /**
  * Ejemplo de lectura y escritura de un rdf en una base de datos de triples
  * Jena TDB2. 
@@ -15,7 +15,8 @@ import org.apache.jena.tdb2.TDB2Factory;
  */
 public class C_PersistenciaRDF_TDB2 {
 	
-	public static void main (String args[]) throws Exception{	
+	public static void main (String args[]) throws Exception{
+		/**
 		//generamos un modelo de ejemplo
 		Model model = A_CreacionRDF.generarEjemplo();
 		
@@ -36,7 +37,40 @@ public class C_PersistenciaRDF_TDB2 {
 		Model modelo2 = data.getDefaultModel();
 		modelo2.write(System.out);
 		data.end();
-		
+		*/
+
+		//generamos un modelo de ejemplo
+		Model model = A_CreacionRDF.generarEjemplo();
+
+		//creamos un tdb (triplet data base) para almacenar el modelo
+		//el borrado del directorio es para que se cree de cero en cada ejecución
+		String directory = "DB1" ;
+		File dbDirectory = new File(directory);
+		if(dbDirectory.exists()){
+			// Se elimina el directorio si existe
+			org.apache.commons.io.FileUtils.deleteDirectory(dbDirectory);
+		}
+
+		Dataset data = TDB2Factory.connectDataset(directory);
+
+		// Se hace una transacción de escritura y confirmamos los cambios
+		data.begin(ReadWrite.WRITE);
+		data.getDefaultModel().add(model);
+		data.commit();
+		data.end();
+
+		// Se importa el fichero "nombre.rdf" en un grafo con nombre
+		data.begin(ReadWrite.WRITE);
+		Model namedGraphModel = data.getNamedModel("http://example.org/namedGraph");
+		RDFDataMgr.read(namedGraphModel, "nombre.rdf");
+
+		data.commit(); // Se cierra la transacción de escritura
+
+		// Confirmamos los cambios y lo imprimimos por pantalla
+		data.begin(ReadWrite.READ);
+		Model model2 = data.getNamedModel("http://example.org/namedGraph");
+		model2.write(System.out);
+		data.end();
 	}
 	
 }
