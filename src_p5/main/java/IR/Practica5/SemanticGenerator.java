@@ -1,5 +1,8 @@
 package IR.Practica5;
 import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 // Se crea la clase Semantic Generator
 public class SemanticGenerator {
@@ -30,6 +33,10 @@ public class SemanticGenerator {
             System.exit(1);
         }
 
+        // listarXML(docsPath);
+        generarArchivoTxt(rdfPath);
+
+
         // lógica para procesar las consultas SPARQL desde archivo XML
 
 
@@ -50,4 +57,76 @@ public class SemanticGenerator {
 
     }
 
+    /**
+     * Función que genera un archivo de texto con el mensaje "Generado correctamente" en el directorio especificado
+     */
+    private static void generarArchivoTxt(String rdfPath) {
+        File txtFile = new File(rdfPath, "mensaje.txt");
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(txtFile))) {
+            writer.write("Generado correctamente en " + rdfPath);
+            System.out.println("Archivo de texto generado correctamente en " + txtFile.getAbsolutePath());
+        } catch (IOException e) {
+            System.out.println("Error al generar el archivo de texto: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
+     */
+    private static void listarXML(String directorio){
+        File directory = new File(directorio);
+        File[] files = directory.listFiles();
+
+        if (files != null) {
+            System.out.println("Documentos XML encontrados en el directorio:");
+            for (File file : files) {
+                if (file.isFile() && file.getName().toLowerCase().endsWith(".xml")) {
+                    System.out.println(file.getName());
+                }
+            }
+        } else {
+            System.out.println(directorio);
+            System.out.println("El directorio no existe o no es accesible.");
+        }
+    }
+
+    /**
+     * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
+     */
+    private static void listarXML1(String directorio) {
+        File directory = new File(directorio);
+        File[] files = directory.listFiles();
+
+        if (files != null) {
+            System.out.println("Documentos XML encontrados en el directorio:");
+            for (File file : files) {
+                if (file.isFile() && file.getName().toLowerCase().endsWith(".xml")) {
+                    System.out.println(file.getName());
+                }
+            }
+        } else {
+            System.out.println("No se puede acceder al directorio: " + directorio);
+            System.out.println("Listando otros archivos en la ubicación:");
+            listarOtrosArchivosEnUbicacion(directorio);
+        }
+    }
+
+    /**
+     * Función que lista otros archivos en la ubicación si no se puede acceder al directorio
+     */
+    private static void listarOtrosArchivosEnUbicacion(String ubicacion) {
+        File location = new File(ubicacion);
+        File[] files = location.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    System.out.println(file.getName());
+                }
+            }
+        } else {
+            System.out.println("No se pueden listar otros archivos en la ubicación.");
+        }
+    }
 }
