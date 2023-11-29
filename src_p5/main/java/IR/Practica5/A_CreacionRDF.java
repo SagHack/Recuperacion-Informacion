@@ -30,7 +30,11 @@ public class A_CreacionRDF {
             e.printStackTrace();
         }
     }
-	
+
+    public static void miMetodo() {
+        System.out.println("Llamado a miMetodo desde SemanticGenerator");
+    }
+
 	/**
 	 * Genera un modelo de jena de ejemplo
 	 */

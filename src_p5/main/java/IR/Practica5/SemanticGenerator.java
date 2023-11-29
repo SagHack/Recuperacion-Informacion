@@ -1,13 +1,19 @@
 package IR.Practica5;
-import java.io.File;
+
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
+
+/**import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.jena.base.Sys;
-import org.apache.jena.rdf.model.*;
+
 import org.apache.jena.vocabulary.VCARD;
-import java.io.FileOutputStream;
+import java.io.FileOutputStream;*/
 
 // Se crea la clase Semantic Generator
 public class SemanticGenerator {
@@ -22,13 +28,18 @@ public class SemanticGenerator {
         // args[3] = <docsPath>
 
         // Si los parámetros son correctos, se obtienen los valores de los mismos
-        // String rdfPath = args[1];
-        // String docsPath = args[3];
+        if (!args[0].equals("-rdf") || !args[2].equals("-docs")) {
+            System.out.println("Invalid command-line arguments.\nUsage: SemanticSearcher -rdf <rdfPath> -docs <docsPath>");
+            System.exit(1);
+        }
+        String rdfPath = args[1];
+        String docsPath = args[3];
 
+        // A_CreacionRDF.miMetodo();
         // Se genera el model RDF a partir de la colección de docuemntos
-        //Model rdfModel = generarModeloRDF(docsPath);
+        Model rdfModel = generarModeloRDF(docsPath);
 
-        System.out.println("FUNCIONA Y EJECUTA");
+
         // listarXML(docsPath);
         //generarArchivoTxt(rdfPath);
 
@@ -58,7 +69,43 @@ public class SemanticGenerator {
      */
     private static Model generarModeloRDF(String docsPath){
         Model model = ModelFactory.createDefaultModel();
-        // Implementar lógica
+
+        // Se define un espacio de nombres para las propiedades
+        String ns = "http://tu.esquema#";
+        model.setNsPrefix("esquema", ns);
+
+        // Se crea los recursos para la clase genérica Documento y sus atributos
+        Resource documento = model.createResource(ns + "Documento");
+        Property tieneDate = model.createProperty(ns + "tieneDate");
+        Property tieneDescription = model.createProperty(ns + "tieneDescription");
+        Property tieneLanguage = model.createProperty(ns + "tieneLanguage");
+        Property tieneTitle = model.createProperty(ns + "tieneTitle");
+
+        // Se asocian los atributos a la calse generica documento
+        model.add(documento, tieneDate, "Valor de Date");
+        model.add(documento, tieneDescription, "Valor de Description");
+        model.add(documento, tieneLanguage, "Valor de Language");
+        model.add(documento, tieneTitle, "Valor de Title");
+
+        // Se crean recuross para las subclases específicas
+        Resource tfg = model.createResource(ns + "TFG");
+        Resource tesis = model.createResource(ns + "Tesis");
+        Resource url = model.createResource(ns + "URL");
+        Resource persona = model.createResource(ns + "Persona");
+        Resource subject = model.createResource(ns + "Subject");
+        Resource publisher = model.createResource(ns + "Publisher");
+
+        // Asocia subclases a la clase genérica Documento
+        Property esSubclaseDe = model.createProperty(ns + "esSubclaseDe");
+        model.add(tfg, esSubclaseDe, documento);
+        model.add(tesis, esSubclaseDe, documento);
+        model.add(url, esSubclaseDe, documento);
+        model.add(persona, esSubclaseDe, documento);
+        model.add(subject, esSubclaseDe, documento);
+        model.add(publisher, esSubclaseDe, documento);
+
+        // Imprime el modelo RDF
+        model.write(System.out, "TURTLE");
 
         return model;
     }
@@ -76,7 +123,7 @@ public class SemanticGenerator {
     /**
      * Función que genera un archivo de texto con el mensaje "Generado correctamente" en el directorio especificado
      */
-    private static void generarArchivoTxt(String rdfPath) {
+    /**private static void generarArchivoTxt(String rdfPath) {
         String fileName = "mensaje.txt";
         File txtFile = new File(rdfPath, fileName);
 
@@ -86,12 +133,12 @@ public class SemanticGenerator {
         } catch (IOException e) {
             System.out.println("Error al generar el archivo de texto: " + e.getMessage());
         }
-    }
+    }*/
 
     /**
      * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
      */
-    private static void listarXML(String directorio){
+    /**private static void listarXML(String directorio){
         File directory = new File(directorio);
         File[] files = directory.listFiles();
 
@@ -106,12 +153,12 @@ public class SemanticGenerator {
             System.out.println(directorio);
             System.out.println("El directorio no existe o no es accesible.");
         }
-    }
+    }*/
 
     /**
      * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
      */
-    private static void listarXML1(String directorio) {
+    /**private static void listarXML1(String directorio) {
         File directory = new File(directorio);
         File[] files = directory.listFiles();
 
@@ -127,12 +174,12 @@ public class SemanticGenerator {
             System.out.println("Listando otros archivos en la ubicación:");
             listarOtrosArchivosEnUbicacion(directorio);
         }
-    }
+    }*/
 
     /**
      * Función que lista otros archivos en la ubicación si no se puede acceder al directorio
      */
-    private static void listarOtrosArchivosEnUbicacion(String ubicacion) {
+    /**private static void listarOtrosArchivosEnUbicacion(String ubicacion) {
         File location = new File(ubicacion);
         File[] files = location.listFiles();
 
@@ -145,5 +192,5 @@ public class SemanticGenerator {
         } else {
             System.out.println("No se pueden listar otros archivos en la ubicación.");
         }
-    }
+    }*/
 }

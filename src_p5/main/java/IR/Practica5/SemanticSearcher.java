@@ -34,12 +34,31 @@ public class SemanticSearcher {
             System.exit(1);
         }
 
+        // Validar la existencia de archivos
+        if (!validarExistenciaArchivos(rdfPath, infoNeedsFile)) {
+            System.out.println("Alguno de los archivos proporcionados no existe.");
+            System.exit(1);
+        }
+
         // lógica para procesar las necesidades de información desde un archivo XML
         // realizar busqueda en el grafo RDF para generar los resultados
+        // TODO
 
         // imprimir ruta del archivo
+        System.out.println("Archivo RDF: " + rdfPath);
         // imprimir ruta del archivo de necesiadades de informacion
+        System.out.println("Archivo de Necesidades de Información: " + infoNeedsFile);
         // ruta del archivo de resutlados
+        System.out.println("Archivo de Resultados: " + resultsFile);
 
+    }
+    private static boolean validarExistenciaArchivos(String... paths) {
+        for (String path : paths) {
+            File file = new File(path);
+            if (!file.exists()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
