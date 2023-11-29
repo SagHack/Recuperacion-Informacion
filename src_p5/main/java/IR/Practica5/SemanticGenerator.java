@@ -4,37 +4,33 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.apache.jena.base.Sys;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.VCARD;
+import java.io.FileOutputStream;
+
 // Se crea la clase Semantic Generator
 public class SemanticGenerator {
  
     public static void main(String[] args) {
 
-        if (args.length < 4) {
-            System.out.println("Uso: SemanticSearcher -rdf <rdfPath> -docs <docsPath>");
-            System.exit(1);
-        }
+        comprobarParametros(args.length); // Se comprueba que el número de parámetros es correcto
+
+        // args[0] = -rdf
+        // args[1] = <rdfPath>
+        // args[2] = -docs
+        // args[3] = <docsPath>
 
         // Si los parámetros son correctos, se obtienen los valores de los mismos
-        String rdfPath = null;
-        String docsPath = null;
+        // String rdfPath = args[1];
+        // String docsPath = args[3];
 
-        for (int i = 0; i < args.length; i++) {
-            if ("-rdf".equals(args[i]) && i + 1 < args.length) {
-                rdfPath = args[i + 1];
+        // Se genera el model RDF a partir de la colección de docuemntos
+        //Model rdfModel = generarModeloRDF(docsPath);
 
-            } else if ("-docs".equals(args[i]) && i + 1 < args.length) {
-                docsPath = args[i + 1];
-            }
-        }
-
-        // Verificar que se proporcionaron ambas rutas
-        if (rdfPath == null || docsPath == null) {
-            System.out.println("Se requieren ambas rutas: -rdf <rdfPath> -docs <docsPath>");
-            System.exit(1);
-        }
-
+        System.out.println("FUNCIONA Y EJECUTA");
         // listarXML(docsPath);
-        generarArchivoTxt(rdfPath);
+        //generarArchivoTxt(rdfPath);
 
 
         // lógica para procesar las consultas SPARQL desde archivo XML
@@ -58,14 +54,35 @@ public class SemanticGenerator {
     }
 
     /**
+     * Función que gnera el model RDF
+     */
+    private static Model generarModeloRDF(String docsPath){
+        Model model = ModelFactory.createDefaultModel();
+        // Implementar lógica
+
+        return model;
+    }
+
+    /**
+     * Función que comprueba que el número de parámetros es correcto
+     */
+    private static void comprobarParametros(int numParametros){
+        if (numParametros != 4) {
+            System.out.println("Número incorrecto de parámetros.\nUso: SemanticSearcher -rdf <rdfPath> -docs <docsPath>");
+            System.exit(1);
+        }
+    }
+
+    /**
      * Función que genera un archivo de texto con el mensaje "Generado correctamente" en el directorio especificado
      */
     private static void generarArchivoTxt(String rdfPath) {
-        File txtFile = new File(rdfPath, "mensaje.txt");
+        String fileName = "mensaje.txt";
+        File txtFile = new File(rdfPath, fileName);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(txtFile))) {
-            writer.write("Generado correctamente en " + rdfPath);
-            System.out.println("Archivo de texto generado correctamente en " + txtFile.getAbsolutePath());
+            writer.write("Generado correctamente");
+            System.out.println("Archivo de texto generado correctamente en " + fileName);
         } catch (IOException e) {
             System.out.println("Error al generar el archivo de texto: " + e.getMessage());
         }
