@@ -4,8 +4,12 @@ import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.sparql.vocabulary.FOAF;
 import org.apache.jena.vocabulary.VCARD;
-
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.FileOutputStream;
+import java.io.File;
 import java.io.IOException;
 import javax.xml.parsers.*;
 import org.w3c.dom.Document;
@@ -44,7 +48,7 @@ public class SemanticGenerator {
 
         // Bucle para leer cada fichero del directorio docsPath y comprobar que es un XML
         // Verificar si es un directorio válido
-        SemanticGenerator.leer_ficheros_XML(docsPath);
+        SemanticGenerator.leer_ficheros_XML(docsPath, rdfPath);
     }
 
 
@@ -59,7 +63,7 @@ public class SemanticGenerator {
     }
 
     // Función que lee un fichero XML y extrae los valores que se buscan
-    private static void parserXML(File file){
+    private static void parserXML(File file, String directorio_docs, String directorio_rdf){
         // Se declaran las variables de los datos que se buscan
         String contributor = "", creator = "", date = "", description = "";
         String identifier = "", language = "", publisher = "";
@@ -224,7 +228,7 @@ public class SemanticGenerator {
 
             
 
-            generarRDFModelo(file, title, description, date, language, creator, contributor,
+            generarRDFModelo(file, directorio_docs, directorio_rdf, title, description, date, language, creator, contributor,
                                     relation, rights, type);
 
         } catch (ParserConfigurationException e) {
@@ -365,7 +369,21 @@ public class SemanticGenerator {
 
     }
 
-    public static void generarRDFModelo(File file, String title, String description, String date, String language,
+    private static void generarArchivoRdf(String rdfPath, String fileName, Model model_rdf) {
+        //String fileName = "mensaje.rdf";
+        File rdfFile = new File(rdfPath, fileName);
+    
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(rdfFile))) {
+            //writer.write("Generado correctamente");
+            System.out.println("Archivo RDF generado correctamente en " + fileName);
+            // Escirbir el modelo en el fichero
+            model_rdf.write(writer, "RDF/XML-ABBREV");
+        } catch (IOException e) {
+            System.out.println("Error al generar el archivo RDF: " + e.getMessage());
+        }
+    }
+
+    public static void generarRDFModelo(File file, String directorio_docs, String directorio_rdf, String title, String description, String date, String language,
                                         String creator, String contributor, String relation, String rights, String type) {
 
         // Se crea el modelo RDF
@@ -412,13 +430,38 @@ public class SemanticGenerator {
         // Se añade la relación entre documento y creador
         //documentInstance.addProperty(FOAF. + "creator", creatorInstance);
 
-        // Se imprime el modelo RDF
-        try(FileOutputStream output = new FileOutputStream("file.rdf")){
-            modelRDF.write(output, "RDF/XML-ABBREV");
-            System.out.println("FICHERO CREADO");
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        // // Obtener el nombre del archivo sin extensión usando Apache Commons IO
+        System.out.println("Nombreficheri: "+file.getName());
+        int posicionPunto = file.getName().lastIndexOf(".");
+        String nombreSinExtension = "";
+        String nombreFicheroCrear = "";
+        if (posicionPunto != -1) {
+            // Extraer el nombre del fichero sin la extensión
+            nombreSinExtension = file.getName().substring(0, posicionPunto);
+            System.out.println("Nombre del fichero sin extensión: " + nombreSinExtension);
+
+            // Almacenar el resultado en otra variable
+            nombreFicheroCrear = nombreSinExtension + ".rdf";
+            System.out.println("Nombre para crear: " + nombreFicheroCrear );
+            // escribe el modelo en un archivo
+            try(FileOutputStream output = new FileOutputStream(nombreFicheroCrear)){
+                modelRDF.write(output, "RDF/XML-ABBREV");
+                System.out.println("FICHERO CREADO");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("El fichero no tiene extensión.");
         }
+        String nombre_fichero_rdf = nombreFicheroCrear;
+        // // Crear el archivo RDF de salida con el mismo nombre pero con extensión ".rdf"
+        // String outputFileName = nameWithoutExtension + ".rdf";
+        // String outputFilePath = new File(outputDirectory, outputFileName).getAbsolutePath();
+
+        System.out.println("FICHERO: " + nombre_fichero_rdf);
+        // Se imprime el modelo RDF
+        SemanticGenerator.generarArchivoRdf(directorio_rdf, nombre_fichero_rdf, modelRDF);
     }
     
 
@@ -460,8 +503,8 @@ public class SemanticGenerator {
     /**
      * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
      */
-    private static void leer_ficheros_XML(String directorio){
-        File directory = new File(directorio);
+    private static void leer_ficheros_XML(String directorio_docs, String directorio_rdf){
+        File directory = new File(directorio_docs);
         System.out.println(directory);
         File[] files = directory.listFiles();
         Integer n = 0;
@@ -469,11 +512,12 @@ public class SemanticGenerator {
             System.out.println("Documentos XML encontrados en el directorio:");
             for (File file : files) {
                 if (file.isFile() && file.getName().toLowerCase().endsWith(".xml")) {
-                    if(n == 0){
+                    if(n < 5){
                         System.out.println(file.getName()); // <- imprime el nombre del fichero xml 
-                        SemanticGenerator.parserXML(file);
+                        SemanticGenerator.parserXML(file, directorio_docs, directorio_rdf);
+                        
                     } 
-                    n = 1;
+                    n = n +1;
                 }
             }
         } else {
