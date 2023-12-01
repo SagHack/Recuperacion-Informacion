@@ -2,7 +2,10 @@ package IR.Practica5;
 
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.sparql.vocabulary.FOAF;
 import org.apache.jena.vocabulary.VCARD;
+
+import java.io.FileOutputStream;
 import java.io.IOException;
 import javax.xml.parsers.*;
 import org.w3c.dom.Document;
@@ -221,8 +224,9 @@ public class SemanticGenerator {
 
             
 
-            generarRDFModelo(title, description, date, language, identifier, creator, contributor,
+            generarRDFModelo(file, title, description, date, language, creator, contributor,
                                     relation, rights, type);
+
         } catch (ParserConfigurationException e) {
             // Handle ParserConfigurationException
             e.printStackTrace();
@@ -239,7 +243,7 @@ public class SemanticGenerator {
     /**
      * Función que crea un Modelo RDF dado los datos que ha de tener
      */
-    private static void generarRDFModelo(String title, String description, String date, String language, 
+    private static void generarRDFModelo1(File file, String title, String description, String date, String language, 
                                 String identifier, String creator, String contributor, String relation, String rights, String type){
        
        
@@ -353,10 +357,68 @@ public class SemanticGenerator {
         // modelRDF.add(publisher, esSubclaseDe, documento);
 
         // // Imprime el modelo RDF
-        modelRDF.write(System.out, "TURTLE");
+
+        
+       
     
         
 
+    }
+
+    public static void generarRDFModelo(File file, String title, String description, String date, String language,
+                                        String creator, String contributor, String relation, String rights, String type) {
+
+        // Se crea el modelo RDF
+        Model modelRDF = ModelFactory.createDefaultModel();
+
+        // Se crean las propiedades (atributos del documento)
+        Property titleProperty = modelRDF.createProperty(DC.title.toString());
+        Property descriptionProperty = modelRDF.createProperty(DC.description.toString());
+        Property dateProperty = modelRDF.createProperty(DC.date.toString());
+        Property languageProperty = modelRDF.createProperty(DC.language.toString());
+        Property contributorProperty = modelRDF.createProperty(DC.contributor.toString());
+        Property relationProperty = modelRDF.createProperty(DC.relation.toString());
+        Property rightsProperty = modelRDF.createProperty(DC.rights.toString());
+        Property typeProperty = modelRDF.createProperty(DC.type.toString());
+        Property nameProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/name");
+        Property publisherProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/publisher");
+
+        // Se crean las clases
+        Resource documentClass = modelRDF.createResource(FOAF.Document.toString());
+        Resource personClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Person");
+        Resource urlClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Creator");
+
+        // Se crea la instancia de documento
+        Resource documentInstance = modelRDF.createResource()
+                .addProperty(titleProperty, title)
+                .addProperty(descriptionProperty, description)
+                .addProperty(dateProperty, date)
+                .addProperty(languageProperty, language);
+
+        // Se crea la instancia de persona (creador)
+        Resource creatorInstance = modelRDF.createResource()
+                .addProperty(nameProperty, creator);
+
+        // Se crea la instancia de URL (relación)
+    //    Resource urlInstance = modelRDF.createResource()
+     //           .addProperty(RDF.type, urlClass);
+
+        // Se añaden las relaciones
+        documentInstance.addProperty(contributorProperty, contributor);
+        //documentInstance.addProperty(relationProperty, urlInstance);
+        documentInstance.addProperty(rightsProperty, rights);
+        documentInstance.addProperty(typeProperty, type);
+
+        // Se añade la relación entre documento y creador
+        //documentInstance.addProperty(FOAF. + "creator", creatorInstance);
+
+        // Se imprime el modelo RDF
+        try(FileOutputStream output = new FileOutputStream("file.rdf")){
+            modelRDF.write(output, "RDF/XML-ABBREV");
+            System.out.println("FICHERO CREADO");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
 
