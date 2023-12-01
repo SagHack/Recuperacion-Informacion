@@ -273,33 +273,6 @@ public class SemanticGenerator {
         }
     }
 
-    private static String obtenerNombreFichero(File file){
-        int posicionPunto = file.getName().lastIndexOf(".");
-        String nombreSinExtension = "";
-        String nombreFicheroCrear = "";
-        if (posicionPunto != -1) {
-            // Extraer el nombre del fichero sin la extensión
-            nombreSinExtension = file.getName().substring(0, posicionPunto);
-            //System.out.println("Nombre del fichero sin extensión: " + nombreSinExtension);
-
-            // Almacenar el resultado en otra variable
-            nombreFicheroCrear = nombreSinExtension + ".rdf";
-            //System.out.println("Nombre para crear: " + nombreFicheroCrear );
-            // escribe el modelo en un archivo
-            try(FileOutputStream output = new FileOutputStream(nombreFicheroCrear)){
-                //modelRDF.write(output, "RDF/XML-ABBREV");
-                //System.out.println("FICHERO CREADO");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("El fichero no tiene extensión.");
-        }
-        return nombreFicheroCrear;
-       
-    }
-
-
     public static void generarRDFModelo(File file,
                                         String directorio_docs, String directorio_rdf, String title, String description, String date, String language,
                                         String creator, String contributor, String relation, String rights, String type, List<String> subjects) {
@@ -363,9 +336,30 @@ public class SemanticGenerator {
         //documentInstance.addProperty(FOAF. + "creator", creatorInstance);
 
 
-        // Se obtiene el nombre del fichero 
-        String nombre_fichero_rdf = SemanticGenerator.obtenerNombreFichero(file);
+        // // Obtener el nombre del archivo sin extensión usando Apache Commons IO
+        //System.out.println("Nombreficheri: "+file.getName());
+        int posicionPunto = file.getName().lastIndexOf(".");
+        String nombreSinExtension = "";
+        String nombreFicheroCrear = "";
+        if (posicionPunto != -1) {
+            // Extraer el nombre del fichero sin la extensión
+            nombreSinExtension = file.getName().substring(0, posicionPunto);
+            //System.out.println("Nombre del fichero sin extensión: " + nombreSinExtension);
 
+            // Almacenar el resultado en otra variable
+            nombreFicheroCrear = nombreSinExtension + ".rdf";
+            //System.out.println("Nombre para crear: " + nombreFicheroCrear );
+            // escribe el modelo en un archivo
+            
+        } else {
+            System.out.println("El fichero no tiene extensión.");
+        }
+        String nombre_fichero_rdf = nombreFicheroCrear;
+        // // Crear el archivo RDF de salida con el mismo nombre pero con extensión ".rdf"
+        // String outputFileName = nameWithoutExtension + ".rdf";
+        // String outputFilePath = new File(outputDirectory, outputFileName).getAbsolutePath();
+
+        //System.out.println("FICHERO: " + nombre_fichero_rdf);
         // Se imprime el modelo RDF
         SemanticGenerator.generarArchivoRdf(directorio_rdf, nombre_fichero_rdf, modelRDF);
     }
