@@ -10,6 +10,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
+
 import java.io.IOException;
 import javax.xml.parsers.*;
 import org.w3c.dom.Document;
@@ -180,12 +183,16 @@ public class SemanticGenerator {
 
             // Se obtiene la lista de nodos con nombre "dc:subject"
             org.w3c.dom.NodeList listaSubject = raiz.getElementsByTagName("dc:subject");
+            // Lista para almacenar los textos de los nodos "dc:subject"
+            List<String> subjects = new ArrayList<>();
             // Se recorre la lista de nodos
             for (int i = 0; i < listaSubject.getLength(); i++) {
                 // Se obtiene el nodo actual
                 org.w3c.dom.Node nodo = listaSubject.item(i);
                 // Se obtiene el texto que contiene el nodo actual
-                subject = nodo.getTextContent();
+                String subjectText = nodo.getTextContent();
+                // Se agrega el texto a la lista
+                subjects.add(subjectText);
             }
 
             // Se obtiene la lista de nodos con nombre "dc:type"
@@ -198,19 +205,19 @@ public class SemanticGenerator {
                 type = nodo.getTextContent();
             }
 
-            // Imprime por pantalla los datos extraidos
-            System.out.println("title: " + title);
-            System.out.println("description: " + description);
-            System.out.println("date: " + date);
-            System.out.println("language: " + language);
-            System.out.println("identifier: " + identifier);
-            System.out.println("creator: " + creator);
-            System.out.println("contributor: " + contributor);
-            System.out.println("publisher: " + publisher);
-            System.out.println("relation: " + relation);
-            System.out.println("rights: " + rights);
-            System.out.println("subject: " + subject);
-            System.out.println("type: " + type);
+            // // Imprime por pantalla los datos extraidos
+            // System.out.println("title: " + title);
+            // System.out.println("description: " + description);
+            // System.out.println("date: " + date);
+            // System.out.println("language: " + language);
+            // System.out.println("identifier: " + identifier);
+            // System.out.println("creator: " + creator);
+            // System.out.println("contributor: " + contributor);
+            // System.out.println("publisher: " + publisher);
+            // System.out.println("relation: " + relation);
+            // System.out.println("rights: " + rights);
+            // System.out.println("subject: " + subject);
+            // System.out.println("type: " + type);
 
             // Se eliminan los saltos de linea y espacios por _
             title = title.replaceAll("\\r\\n|\\r|\\n", "_");
@@ -225,11 +232,17 @@ public class SemanticGenerator {
             rights = rights.replaceAll("\\r\\n|\\r|\\n", "_");
             subject = subject.replaceAll("\\r\\n|\\r|\\n", "_");
             type = type.replaceAll("\\r\\n|\\r|\\n", "_");
+            
+            // Se eliminan los saltos de line y espacios en subject
+            for (int i = 0; i < subjects.size(); i++) {
+                subjects.set(i, subjects.get(i).replaceAll("\\r\\n|\\r|\\n", "_"));
+            }
 
             
 
-            generarRDFModelo(file, directorio_docs, directorio_rdf, title, description, date, language, creator, contributor,
-                                    relation, rights, type);
+            generarRDFModelo(file, directorio_docs, directorio_rdf, 
+                            title, description, date, language, creator, 
+                            contributor, relation, rights, type, subjects);
 
         } catch (ParserConfigurationException e) {
             // Handle ParserConfigurationException
@@ -243,139 +256,16 @@ public class SemanticGenerator {
         }
     }
     
-
     /**
-     * Función que crea un Modelo RDF dado los datos que ha de tener
+     * Función que genera un archivo RDF
      */
-    private static void generarRDFModelo1(File file, String title, String description, String date, String language, 
-                                String identifier, String creator, String contributor, String relation, String rights, String type){
-       
-       
-                                    // Se crea el modelo RDF
-        Model modelRDF = ModelFactory.createDefaultModel();
-
-        // Se crean los properties (atributos del documento)
-        Property titleProperty = modelRDF.createProperty(DC.title.toString());
-        Property descriptionProperty = modelRDF.createProperty(DC.description.toString());
-        Property dateProperty = modelRDF.createProperty(DC.date.toString());
-        Property languageProperty = modelRDF.createProperty(DC.language.toString());
-        Property identifierProperty = modelRDF.createProperty(DC.identifier.toString());
-        
-        Property contributorProperty = modelRDF.createProperty(DC.contributor.toString());
-        Property relationProperty = modelRDF.createProperty(DC.relation.toString());
-        Property rightsProperty = modelRDF.createProperty(DC.rights.toString());
-        Property typeProperty = modelRDF.createProperty(DC.type.toString());
-        Property name = modelRDF.createProperty("http://xmlns.com/foaf/0.1/name");
-        Property publisherProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/publisher");
-
-        // Se crea la clase documento
-        // Resource documento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Documents");
-
-        // Se crea la clase persona
-        Resource persona = modelRDF.createResource("http://xmlns.com/foaf/0.1/Person");
-        Resource creador = modelRDF.createResource("http://xmlns.com/foaf/0.1/Creator", persona)
-            .addProperty(name, creator);
-
-       // Resource departamento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Departamento"+ publisher)
-       //     .addProperty(publisherProperty, publisher);
-
-        Resource url = modelRDF.createResource("http://xmlns.com/foaf/0.1/URL");
-
-        Resource relacion = modelRDF.createResource(relation, url); 
-        Resource tipo = modelRDF.createResource("http://xmlns.com/foaf/0.1/Type"+ type);
-
-
-        
-        
-        // Property creatorProperty = modelRDF.createProperty(DC.creator.toString())
-        //     .addProperty(persona, creator);
-        
-        // // Se añade el contributor en un bucle porque puede haber varios
-        // Property contributorProperty = modelRDF.createProperty(DC.contributor.toString())
-        //     .addProperty(persona, contributor);
-        // for (int i = 0; i < contributor.length; i++) {
-        //     contributorProperty.addProperty(contributorProperty, contributor[i]);
-        // }
-
-        // Se crea la clase publisher
-        // Property publisherProperty = modelRDF.createProperty(DC.publisher.toString())
-        //     .addProperty(publisherProperty, publisher);
-
-        // // Se crea la clase subject
-        // Property subjectProperty = modelRDF.createProperty(DC.subject.toString())
-        //     .addProperty(subjectProperty, subject);
-
-        // Se crea la clase Documento
-        Resource documento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Document")
-            .addProperty(titleProperty, title)
-            .addProperty(descriptionProperty, description)
-            .addProperty(dateProperty, date)
-            .addProperty(languageProperty, language);
-            // .addProperty(identifierProperty, identifier)
-            // .addProperty(contributorProperty, contributor)
-            // .addProperty(relationProperty, relation)
-            // .addProperty(rightsProperty, rights)
-            // .addProperty(typeProperty, type);
-
-        // Se añaden la relacion entre documento y creador
-        modelRDF.add(documento, contributorProperty, creator);
-        // documento.addProperty(departamento, documento);
-
-        // Se añade la relacion entre documento y publisher
-        //documento.addProperty(publisherProperty, publisher);
-        
-
-
-        // Se crea los recursos para la clase genérica Documento y sus atributos
-
-
-        // // property nombre = modelRDF.createProperty(DC.nombre.toString());
-        // Resource documento = modelRDF.createResource(ns + "Documento");
-        // Property tieneDate = modelRDF.createProperty(ns + "tieneDate");
-        // Property tieneDescription = modelRDF.createProperty(ns + "tieneDescription");
-        // Property tieneLanguage = modelRDF.createProperty(ns + "tieneLanguage");
-        // Property tieneTitle = modelRDF.createProperty(ns + "tieneTitle");
-
-        // // Se asocian los atributos a la calse generica documento
-        // modelRDF.add(documento, tieneDate, date);
-        // modelRDF.add(documento, tieneDescription, description);
-        // modelRDF.add(documento, tieneLanguage, language);
-        // modelRDF.add(documento, tieneTitle, title);
-        
-        // // Se crean recuross para las subclases específicas
-        // Resource tfg = modelRDF.createResource(ns + "TFG");
-        // Resource tesis = modelRDF.createResource(ns + "Tesis");
-        // Resource url = modelRDF.createResource(ns + "URL");
-        // Resource persona = modelRDF.createResource(ns + "Persona");
-        // // ""htto://www.w3.org/2000/01/rdf-schema#"" + "Resource"
-        // Resource subject = modelRDF.createResource(ns + "Subject");
-        // Resource publisher = modelRDF.createResource(ns + "Publisher");
-
-        // // Asocia subclases a la clase genérica Documento
-        // Property esSubclaseDe = modelRDF.createProperty(ns + "esSubclaseDe");
-        // modelRDF.add(tfg, esSubclaseDe, documento);
-        // modelRDF.add(tesis, esSubclaseDe, documento);
-        // modelRDF.add(url, esSubclaseDe, documento);
-        // modelRDF.add(persona, esSubclaseDe, documento);
-        // modelRDF.add(subject, esSubclaseDe, documento);
-        // modelRDF.add(publisher, esSubclaseDe, documento);
-
-        // // Imprime el modelo RDF
-
-        
-       
-    
-        
-
-    }
-
     private static void generarArchivoRdf(String rdfPath, String fileName, Model model_rdf) {
         //String fileName = "mensaje.rdf";
         File rdfFile = new File(rdfPath, fileName);
     
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rdfFile))) {
             //writer.write("Generado correctamente");
-            System.out.println("Archivo RDF generado correctamente en " + fileName);
+            //System.out.println("Archivo RDF generado correctamente en " + fileName);
             // Escirbir el modelo en el fichero
             model_rdf.write(writer, "RDF/XML-ABBREV");
         } catch (IOException e) {
@@ -383,43 +273,85 @@ public class SemanticGenerator {
         }
     }
 
-    public static void generarRDFModelo(File file, String directorio_docs, String directorio_rdf, String title, String description, String date, String language,
-                                        String creator, String contributor, String relation, String rights, String type) {
+    private static String obtenerNombreFichero(File file){
+        int posicionPunto = file.getName().lastIndexOf(".");
+        String nombreSinExtension = "";
+        String nombreFicheroCrear = "";
+        if (posicionPunto != -1) {
+            // Extraer el nombre del fichero sin la extensión
+            nombreSinExtension = file.getName().substring(0, posicionPunto);
+            //System.out.println("Nombre del fichero sin extensión: " + nombreSinExtension);
+
+            // Almacenar el resultado en otra variable
+            nombreFicheroCrear = nombreSinExtension + ".rdf";
+            //System.out.println("Nombre para crear: " + nombreFicheroCrear );
+            // escribe el modelo en un archivo
+            try(FileOutputStream output = new FileOutputStream(nombreFicheroCrear)){
+                //modelRDF.write(output, "RDF/XML-ABBREV");
+                //System.out.println("FICHERO CREADO");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("El fichero no tiene extensión.");
+        }
+        return nombreFicheroCrear;
+       
+    }
+
+
+    public static void generarRDFModelo(File file,
+                                        String directorio_docs, String directorio_rdf, String title, String description, String date, String language,
+                                        String creator, String contributor, String relation, String rights, String type, List<String> subjects) {
 
         // Se crea el modelo RDF
         Model modelRDF = ModelFactory.createDefaultModel();
 
         // Se crean las propiedades (atributos del documento)
         Property titleProperty = modelRDF.createProperty(DC.title.toString());
+        Property languageProperty = modelRDF.createProperty(DC.language.toString());
         Property descriptionProperty = modelRDF.createProperty(DC.description.toString());
         Property dateProperty = modelRDF.createProperty(DC.date.toString());
-        Property languageProperty = modelRDF.createProperty(DC.language.toString());
+        Property subjectProperty = modelRDF.createProperty(DC.subject.toString());
+        Property publisherProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/publisher"); // dc:contenido -> dc:publusher del xml
         Property contributorProperty = modelRDF.createProperty(DC.contributor.toString());
-        Property relationProperty = modelRDF.createProperty(DC.relation.toString());
+        
         Property rightsProperty = modelRDF.createProperty(DC.rights.toString());
+        Property relationProperty = modelRDF.createProperty(DC.relation.toString());
+        
+        
         Property typeProperty = modelRDF.createProperty(DC.type.toString());
         Property nameProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/name");
-        Property publisherProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/publisher");
-
+        
         // Se crean las clases
-        Resource documentClass = modelRDF.createResource(FOAF.Document.toString());
         Resource personClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Person");
         Resource urlClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Creator");
+        Resource subjecClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Subject");
+        Resource publisherClass = modelRDF.createResource("http://xmlns.com/foaf/0.1/Publisher");
 
         // Se crea la instancia de documento
         Resource documentInstance = modelRDF.createResource()
                 .addProperty(titleProperty, title)
+                .addProperty(languageProperty, language)
                 .addProperty(descriptionProperty, description)
-                .addProperty(dateProperty, date)
-                .addProperty(languageProperty, language);
+                .addProperty(dateProperty, date);
+                
+
+        // Se crean las instancias de subject
+        for (int i = 0; i < subjects.size(); i++) {
+            Resource subjectInstance = modelRDF.createResource()
+                    .addProperty(subjectProperty, subjects.get(i));
+        }
 
         // Se crea la instancia de persona (creador)
-        Resource creatorInstance = modelRDF.createResource()
+        Resource personaInstance = modelRDF.createResource()
                 .addProperty(nameProperty, creator);
+                //.addProperty(nameProperty, contributor);
 
-        // Se crea la instancia de URL (relación)
-    //    Resource urlInstance = modelRDF.createResource()
-     //           .addProperty(RDF.type, urlClass);
+        // Se crea la instancia de URL (relation)
+        Resource urlInstance = modelRDF.createResource()
+                .addProperty(relationProperty, relation)
+                .addProperty(rightsProperty, rights);
 
         // Se añaden las relaciones
         documentInstance.addProperty(contributorProperty, contributor);
@@ -431,93 +363,32 @@ public class SemanticGenerator {
         //documentInstance.addProperty(FOAF. + "creator", creatorInstance);
 
 
-        // // Obtener el nombre del archivo sin extensión usando Apache Commons IO
-        System.out.println("Nombreficheri: "+file.getName());
-        int posicionPunto = file.getName().lastIndexOf(".");
-        String nombreSinExtension = "";
-        String nombreFicheroCrear = "";
-        if (posicionPunto != -1) {
-            // Extraer el nombre del fichero sin la extensión
-            nombreSinExtension = file.getName().substring(0, posicionPunto);
-            System.out.println("Nombre del fichero sin extensión: " + nombreSinExtension);
+        // Se obtiene el nombre del fichero 
+        String nombre_fichero_rdf = SemanticGenerator.obtenerNombreFichero(file);
 
-            // Almacenar el resultado en otra variable
-            nombreFicheroCrear = nombreSinExtension + ".rdf";
-            System.out.println("Nombre para crear: " + nombreFicheroCrear );
-            // escribe el modelo en un archivo
-            try(FileOutputStream output = new FileOutputStream(nombreFicheroCrear)){
-                modelRDF.write(output, "RDF/XML-ABBREV");
-                System.out.println("FICHERO CREADO");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("El fichero no tiene extensión.");
-        }
-        String nombre_fichero_rdf = nombreFicheroCrear;
-        // // Crear el archivo RDF de salida con el mismo nombre pero con extensión ".rdf"
-        // String outputFileName = nameWithoutExtension + ".rdf";
-        // String outputFilePath = new File(outputDirectory, outputFileName).getAbsolutePath();
-
-        System.out.println("FICHERO: " + nombre_fichero_rdf);
         // Se imprime el modelo RDF
         SemanticGenerator.generarArchivoRdf(directorio_rdf, nombre_fichero_rdf, modelRDF);
     }
     
-
-
-
-
-
-    private static void add_to_RDF(Model model_rdf, String contenido,String tag) {
-        // VCARD.FN: Nombre completo de una entidad.
-        // VCARD.N: Componentes del nombre (familia, dado, prefijo, sufijo).
-        // VCARD.EMAIL: Dirección de correo electrónico.
-        // VCARD.TEL: Número de teléfono.
-        // VCARD.ADDR: Dirección postal.
-        // VCARD.GEO: Coordenadas geográficas.
-        // VCARD.ORG: Nombre de la organización.
-        // VCARD.TITLE: Título o cargo en la organización.
-        // VCARD.URL: URL asociada con la entidad.
-        // VCARD.BDAY: Fecha de nacimiento.
-        // VCARD.PHOTO: Representa una imagen o fotografía de la entidad.
-        // VCARD.LOGO: Representa el logotipo de una organización.
-        // VCARD.ROLE: Representa el rol o posición en una organización.
-        // VCARD.CATEGORIES: Categorías asociadas con la entidad.
-        // VCARD.NICKNAME: Apodo o nombre familiar.
-        // VCARD.REV: Fecha de revisión.
-
-        String pruebaURI = "http://prueba/JohnSmith";
-        System.out.println("TAG: "+ tag);
-
-        if(tag == "dc:date"){
-
-
-            Resource resource = model_rdf.createResource(pruebaURI)
-                    .addProperty(VCARD.FN, contenido);
-            System.out.println("IMPRIMIR MODELO");
-            model_rdf.write(System.out);
-        }
-    }
 
     /**
      * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
      */
     private static void leer_ficheros_XML(String directorio_docs, String directorio_rdf){
         File directory = new File(directorio_docs);
-        System.out.println(directory);
+        //System.out.println(directory);
         File[] files = directory.listFiles();
         Integer n = 0;
         if (files != null) {
-            System.out.println("Documentos XML encontrados en el directorio:");
+            //System.out.println("Documentos XML encontrados en el directorio:");
             for (File file : files) {
                 if (file.isFile() && file.getName().toLowerCase().endsWith(".xml")) {
-                    if(n < 5){
-                        System.out.println(file.getName()); // <- imprime el nombre del fichero xml 
+                    if(n == 0){
+                        //System.out.println(file.getName()); // <- imprime el nombre del fichero xml 
                         SemanticGenerator.parserXML(file, directorio_docs, directorio_rdf);
                         
                     } 
-                    n = n +1;
+                    n = 1;
                 }
             }
         } else {
