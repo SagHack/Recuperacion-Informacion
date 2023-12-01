@@ -372,17 +372,16 @@ public class SemanticGenerator {
         File directory = new File(directorio_docs);
         //System.out.println(directory);
         File[] files = directory.listFiles();
-        Integer n = 0;
+        
         if (files != null) {
             //System.out.println("Documentos XML encontrados en el directorio:");
             for (File file : files) {
                 if (file.isFile() && file.getName().toLowerCase().endsWith(".xml")) {
-                    if(n == 0){
+
                         //System.out.println(file.getName()); // <- imprime el nombre del fichero xml 
                         SemanticGenerator.parserXML(file, directorio_docs, directorio_rdf);
-                        
-                    } 
-                    n = 1;
+
+
                 }
             }
         } else {
