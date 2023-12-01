@@ -1,41 +1,20 @@
 package IR.Practica5;
 
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
-import java.nio.file.*;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.VCARD;
-import org.apache.jena.datatypes.xsd.XSDDateTime;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.vocabulary.VCARD;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import javax.xml.parsers.*;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.apache.jena.vocabulary.DC;
 
-import java.io.File;
-import java.util.Objects;
 
 
 public class SemanticGenerator {
@@ -63,80 +42,6 @@ public class SemanticGenerator {
         // Bucle para leer cada fichero del directorio docsPath y comprobar que es un XML
         // Verificar si es un directorio válido
         SemanticGenerator.leer_ficheros_XML(docsPath);
-
-
-
-        // Se genera el model RDF
-        //Model modelRDF = SemanticGenerator.generarModeloRDF();
-
-        // Leer cada XML de docsPath y generar su modelo RDF
-        // El modelo RDF se guarda en el archivo rdfPath con el mismo nombre del fichero xml
-        
-
-        // Bucle que lee cada fichero del directorio docsPath y comprueba si es un fichero xml
-        // Si se trata de un fichero XML imprime el nombre por pantalla del fichero
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Se genera el modelo RDF desde los archivos XML en el directorio docsPath
-        // y se guarda en el archivo rdfPath
-        // Por cada xml se guarda el correspondiente en rdfPath (su modelo)
-        
-
-        // Crear SPARQL
-
-
-
-
-
-
-
-        // Llamar a la función generarModeloDesdeXML para cada archivo en el directorio docsPath
-        // File docsDirectory = new File(docsPath);
-        // if (docsDirectory.isDirectory()) {
-        //     File[] listOfFiles = docsDirectory.listFiles();
-        //     if (listOfFiles != null) {
-        //         for (File file : listOfFiles) {
-        //             if (file.isFile() && file.getName().endsWith(".xml")) {
-        //                 System.out.println("Procesando archivo: " + file.getName());
-        //                 SemanticGenerator.generarModeloDesdeXML(file.getAbsolutePath());
-        //             }
-        //         }
-        //     } else {
-        //         System.out.println("El directorio de documentos está vacío.");
-        //     }
-        // } else {
-        //     System.out.println("La ruta especificada para documentos no es un directorio válido.");
-        // }
-        // Se escribe el modelo RDF en un archivo
-        /**try {
-            FileOutputStream output = new FileOutputStream(rdfPath);
-            modelRDF.write(output, "TURTLE");
-        } catch (FileNotFoundException e) {
-            System.out.println("Error al escribir el modelo RDF en el archivo.");
-            e.printStackTrace();
-        }
-        */
-
-        // Aquí puedes agregar código para cargar datos RDF desde un archivo externo
-        // SemanticGenerator.cargarDatosRDF(modelRDF, rdfPath);
-
-        // Ejemplo de consulta SPARQL
-        // SemanticGenerator.realizarConsultaSPARQL(modelRDF);
-
-        // modificarArchivosXML(docsPath, rdfPath);
     }
 
 
@@ -149,59 +54,6 @@ public class SemanticGenerator {
             System.exit(1);
         }
     }
-
-
-    /**
-     * Genera un modelo RDF
-     */
-    public static Model generarModeloRDF(String title, String description, String date, String language, 
-                                        String identifier, String creator, String contributor, String publisher,
-                                         String relation, String rights, String subject, String type) {
-        Model modelRDF = ModelFactory.createDefaultModel();
-
-        String ns = "http://tu.esquema#";
-        modelRDF.setNsPrefix("esquema", ns);
-
-        // Se crea los recursos para la clase genérica Documento y sus atributos
-        Resource documento = modelRDF.createResource(ns + "Documento");
-        Property tieneDate = modelRDF.createProperty(ns + "tieneDate");
-        Property tieneDescription = modelRDF.createProperty(ns + "tieneDescription");
-        Property tieneLanguage = modelRDF.createProperty(ns + "tieneLanguage");
-        Property tieneTitle = modelRDF.createProperty(ns + "tieneTitle");
-
-        // Se asocian los atributos a la calse generica documento
-        modelRDF.add(documento, tieneDate, "Valor de Date");
-        modelRDF.add(documento, tieneDescription, "Valor de Description");
-        modelRDF.add(documento, tieneLanguage, "Valor de Language");
-        modelRDF.add(documento, tieneTitle, "Valor de Title");
-
-        // Se crean recuross para las subclases específicas
-        Resource tfg = modelRDF.createResource(ns + "TFG");
-        Resource tesis = modelRDF.createResource(ns + "Tesis");
-        Resource url = modelRDF.createResource(ns + "URL");
-        Resource persona = modelRDF.createResource(ns + "Persona");
-        Resource subject = modelRDF.createResource(ns + "Subject");
-        Resource publisher = modelRDF.createResource(ns + "Publisher");
-
-        // Asocia subclases a la clase genérica Documento
-        Property esSubclaseDe = modelRDF.createProperty(ns + "esSubclaseDe");
-        modelRDF.add(tfg, esSubclaseDe, documento);
-        modelRDF.add(tesis, esSubclaseDe, documento);
-        modelRDF.add(url, esSubclaseDe, documento);
-        modelRDF.add(persona, esSubclaseDe, documento);
-        modelRDF.add(subject, esSubclaseDe, documento);
-        modelRDF.add(publisher, esSubclaseDe, documento);
-
-        // Imprime el modelo RDF
-        modelRDF.write(System.out, "TURTLE");
-
-        return modelRDF;
-    }
-
-
-
-
-
 
     // Función que lee un fichero XML y extrae los valores que se buscan
     private static void parserXML(File file){
@@ -339,10 +191,6 @@ public class SemanticGenerator {
                 type = nodo.getTextContent();
             }
 
-
-
-
-
             // Imprime por pantalla los datos extraidos
             System.out.println("title: " + title);
             System.out.println("description: " + description);
@@ -357,9 +205,24 @@ public class SemanticGenerator {
             System.out.println("subject: " + subject);
             System.out.println("type: " + type);
 
+            // Se eliminan los saltos de linea y espacios por _
+            title = title.replaceAll("\\r\\n|\\r|\\n", "_");
+            description = description.replaceAll("\\r\\n|\\r|\\n", "_");
+            date = date.replaceAll("\\r\\n|\\r|\\n", "_");
+            language = language.replaceAll("\\r\\n|\\r|\\n", "_");
+            identifier = identifier.replaceAll("\\r\\n|\\r|\\n", "_");
+            creator = creator.replaceAll("\\r\\n|\\r|\\n", "_");
+            contributor = contributor.replaceAll("\\r\\n|\\r|\\n", "_");
+            publisher = publisher.replaceAll("\\r\\n|\\r|\\n", "_");
+            relation = relation.replaceAll("\\r\\n|\\r|\\n", "_");
+            rights = rights.replaceAll("\\r\\n|\\r|\\n", "_");
+            subject = subject.replaceAll("\\r\\n|\\r|\\n", "_");
+            type = type.replaceAll("\\r\\n|\\r|\\n", "_");
+
+            
 
             generarRDFModelo(title, description, date, language, identifier, creator, contributor,
-                                    publisher, relation, rights, subject, type);
+                                    relation, rights, type);
         } catch (ParserConfigurationException e) {
             // Handle ParserConfigurationException
             e.printStackTrace();
@@ -377,102 +240,125 @@ public class SemanticGenerator {
      * Función que crea un Modelo RDF dado los datos que ha de tener
      */
     private static void generarRDFModelo(String title, String description, String date, String language, 
-                                String identifier, String creator, String contributor, String 
-                                String publisher, String relation, String rights, String subject, String type){
-        // Se crea el modelo RDF
+                                String identifier, String creator, String contributor, String relation, String rights, String type){
+       
+       
+                                    // Se crea el modelo RDF
         Model modelRDF = ModelFactory.createDefaultModel();
 
-        // Se crea el namespace
-        String ns = "http://tu.esquema#";
-        modelRDF.setNsPrefix("esquema", ns);
+        // Se crean los properties (atributos del documento)
+        Property titleProperty = modelRDF.createProperty(DC.title.toString());
+        Property descriptionProperty = modelRDF.createProperty(DC.description.toString());
+        Property dateProperty = modelRDF.createProperty(DC.date.toString());
+        Property languageProperty = modelRDF.createProperty(DC.language.toString());
+        Property identifierProperty = modelRDF.createProperty(DC.identifier.toString());
+        
+        Property contributorProperty = modelRDF.createProperty(DC.contributor.toString());
+        Property relationProperty = modelRDF.createProperty(DC.relation.toString());
+        Property rightsProperty = modelRDF.createProperty(DC.rights.toString());
+        Property typeProperty = modelRDF.createProperty(DC.type.toString());
+        Property name = modelRDF.createProperty("http://xmlns.com/foaf/0.1/name");
+        Property publisherProperty = modelRDF.createProperty("http://xmlns.com/foaf/0.1/publisher");
+
+        // Se crea la clase documento
+        // Resource documento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Documents");
+
+        // Se crea la clase persona
+        Resource persona = modelRDF.createResource("http://xmlns.com/foaf/0.1/Person");
+        Resource creador = modelRDF.createResource("http://xmlns.com/foaf/0.1/Creator", persona)
+            .addProperty(name, creator);
+
+       // Resource departamento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Departamento"+ publisher)
+       //     .addProperty(publisherProperty, publisher);
+
+        Resource url = modelRDF.createResource("http://xmlns.com/foaf/0.1/URL");
+
+        Resource relacion = modelRDF.createResource(relation, url); 
+        Resource tipo = modelRDF.createResource("http://xmlns.com/foaf/0.1/Type"+ type);
+
+
+        
+        
+        // Property creatorProperty = modelRDF.createProperty(DC.creator.toString())
+        //     .addProperty(persona, creator);
+        
+        // // Se añade el contributor en un bucle porque puede haber varios
+        // Property contributorProperty = modelRDF.createProperty(DC.contributor.toString())
+        //     .addProperty(persona, contributor);
+        // for (int i = 0; i < contributor.length; i++) {
+        //     contributorProperty.addProperty(contributorProperty, contributor[i]);
+        // }
+
+        // Se crea la clase publisher
+        // Property publisherProperty = modelRDF.createProperty(DC.publisher.toString())
+        //     .addProperty(publisherProperty, publisher);
+
+        // // Se crea la clase subject
+        // Property subjectProperty = modelRDF.createProperty(DC.subject.toString())
+        //     .addProperty(subjectProperty, subject);
+
+        // Se crea la clase Documento
+        Resource documento = modelRDF.createResource("http://xmlns.com/foaf/0.1/Document")
+            .addProperty(titleProperty, title)
+            .addProperty(descriptionProperty, description)
+            .addProperty(dateProperty, date)
+            .addProperty(languageProperty, language);
+            // .addProperty(identifierProperty, identifier)
+            // .addProperty(contributorProperty, contributor)
+            // .addProperty(relationProperty, relation)
+            // .addProperty(rightsProperty, rights)
+            // .addProperty(typeProperty, type);
+
+        // Se añaden la relacion entre documento y creador
+        modelRDF.add(documento, contributorProperty, creator);
+        // documento.addProperty(departamento, documento);
+
+        // Se añade la relacion entre documento y publisher
+        //documento.addProperty(publisherProperty, publisher);
+        
+
 
         // Se crea los recursos para la clase genérica Documento y sus atributos
-        Resource documento = modelRDF.createResource(ns + "Documento");
-        Property tieneDate = modelRDF.createProperty(ns + "tieneDate");
-        Property tieneDescription = modelRDF.createProperty(ns + "tieneDescription");
-        Property tieneLanguage = modelRDF.createProperty(ns + "tieneLanguage");
-        Property tieneTitle = modelRDF.createProperty(ns + "tieneTitle");
 
-        // Se asocian los atributos a la calse generica documento
-        modelRDF.add(documento, tieneDate, date);
-        modelRDF.add(documento, tieneDescription, description);
-        modelRDF.add(documento, tieneLanguage, language);
-        modelRDF.add(documento, tieneTitle, title);
+
+        // // property nombre = modelRDF.createProperty(DC.nombre.toString());
+        // Resource documento = modelRDF.createResource(ns + "Documento");
+        // Property tieneDate = modelRDF.createProperty(ns + "tieneDate");
+        // Property tieneDescription = modelRDF.createProperty(ns + "tieneDescription");
+        // Property tieneLanguage = modelRDF.createProperty(ns + "tieneLanguage");
+        // Property tieneTitle = modelRDF.createProperty(ns + "tieneTitle");
+
+        // // Se asocian los atributos a la calse generica documento
+        // modelRDF.add(documento, tieneDate, date);
+        // modelRDF.add(documento, tieneDescription, description);
+        // modelRDF.add(documento, tieneLanguage, language);
+        // modelRDF.add(documento, tieneTitle, title);
         
-        // Se crean recuross para las subclases específicas
-        Resource tfg = modelRDF.createResource(ns + "TFG");
-        Resource tesis = modelRDF.createResource(ns + "Tesis");
-        Resource url = modelRDF.createResource(ns + "URL");
-        Resource persona = modelRDF.createResource(ns + "Persona");
-        Resource subject = modelRDF.createResource(ns + "Subject");
-        Resource publisher = modelRDF.createResource(ns + "Publisher");
+        // // Se crean recuross para las subclases específicas
+        // Resource tfg = modelRDF.createResource(ns + "TFG");
+        // Resource tesis = modelRDF.createResource(ns + "Tesis");
+        // Resource url = modelRDF.createResource(ns + "URL");
+        // Resource persona = modelRDF.createResource(ns + "Persona");
+        // // ""htto://www.w3.org/2000/01/rdf-schema#"" + "Resource"
+        // Resource subject = modelRDF.createResource(ns + "Subject");
+        // Resource publisher = modelRDF.createResource(ns + "Publisher");
 
-        // Asocia subclases a la clase genérica Documento
-        Property esSubclaseDe = modelRDF.createProperty(ns + "esSubclaseDe");
-        modelRDF.add(tfg, esSubclaseDe, documento);
-        modelRDF.add(tesis, esSubclaseDe, documento);
-        modelRDF.add(url, esSubclaseDe, documento);
-        modelRDF.add(persona, esSubclaseDe, documento);
-        modelRDF.add(subject, esSubclaseDe, documento);
-        modelRDF.add(publisher, esSubclaseDe, documento);
+        // // Asocia subclases a la clase genérica Documento
+        // Property esSubclaseDe = modelRDF.createProperty(ns + "esSubclaseDe");
+        // modelRDF.add(tfg, esSubclaseDe, documento);
+        // modelRDF.add(tesis, esSubclaseDe, documento);
+        // modelRDF.add(url, esSubclaseDe, documento);
+        // modelRDF.add(persona, esSubclaseDe, documento);
+        // modelRDF.add(subject, esSubclaseDe, documento);
+        // modelRDF.add(publisher, esSubclaseDe, documento);
 
-        // Imprime el modelo RDF
+        // // Imprime el modelo RDF
         modelRDF.write(System.out, "TURTLE");
     
         
 
     }
-
-    // // parserXML(file, doc, "dc:identifier", "identifier",);
-    // private static void parserXML(Model model_rdf,File file, String tag, String campo) {
-        
-    //     try {
-    //         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    //         DocumentBuilder builder = factory.newDocumentBuilder();
-    //         org.w3c.dom.Document documento = builder.parse(file);
-            
-    //         org.w3c.dom.NodeList nList = documento.getElementsByTagName(tag);
-    //         int n = nList.getLength();
-    //         for (int i = 0; i < n; i++) {
-    //             org.w3c.dom.Node nodo = nList.item(i);
-    //             String contenido = nodo.getTextContent().toLowerCase();
-
-    //             if(Objects.equals(campo, "type")){
-    //                 int dashIndex = contenido.indexOf("-");
-    //                 if (contenido.contains("-")) {
-    //                     contenido = contenido.substring(contenido.indexOf("-") + 1).trim();
-    //                 }
-    //             }
-    //             if(Objects.equals(campo, "language")){
-    //                 //Si no al buscar por language:es, lo detecta como una palabra vacia y no busca
-    //                 if(Objects.equals(contenido, "es") || Objects.equals(contenido, "spa")){
-    //                     contenido = "spanish";
-    //                 }else if(Objects.equals(contenido, "en")){
-    //                     contenido = "english";
-    //                 }
-    //             }
-    //             if(Objects.equals(campo, "created") || Objects.equals(campo, "issued")){
-    //                 contenido = contenido.replaceAll("[/\\-]", ""); // Elimina "/" y "-"
-    //             }
-
-    //             add_to_RDF(model_rdf,contenido,tag);
-
-    //         }
-    //     } catch (ParserConfigurationException e) {
-    //         // Handle ParserConfigurationException
-    //         e.printStackTrace();
-    //     } catch (IOException e) {
-    //         // Handle IOException
-    //         e.printStackTrace();
-    //     } catch (SAXException e) {
-    //         // Handle SAXException
-    //         e.printStackTrace();
-    //     }
-    // }
-
     
-
-       
 
 
 
@@ -508,203 +394,6 @@ public class SemanticGenerator {
             model_rdf.write(System.out);
         }
     }
-
-
-    
-
-
-
-
-
-
-    public static String extractDCDate(String xmlFileName) {
-        try {
-            File xmlFile = new File(xmlFileName);
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-
-            // Parse the XML file
-            Document document = builder.parse(xmlFile);
-
-            // Find the dc:date element
-            NodeList nodeList = document.getElementsByTagName("dc:date");
-
-            if (nodeList.getLength() > 0) {
-                Node dcdateNode = nodeList.item(0);
-
-                // Extract the text content of dc:date element
-                return dcdateNode.getTextContent();
-            } else {
-                System.out.println("No dc:date element found in the XML document.");
-                return null;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-    public static Model generarModeloDesdeXML(String filepath) {
-        
-        Model modelRDF = ModelFactory.createDefaultModel();
-        
-        // Leer del fichero XML y obtener la informacion para el modelo RDF
-        
-        
-        
-        // definiciones
-        String personURI    = "http://somewhere/JohnSmith";
-        String givenName    = "John";
-        String familyName   = "Smith";
-        String fullName     = givenName + " " + familyName;
-        
-        String ns = "http://tu.esquema#";
-        modelRDF.setNsPrefix("esquema", ns);
-
-        // Se crea los recursos para la clase genérica Documento y sus atributos
-        Resource documento = modelRDF.createResource(ns + "Documento");
-        Property tieneDate = modelRDF.createProperty(ns + "tieneDate");
-        Property tieneDescription = modelRDF.createProperty(ns + "tieneDescription");
-        Property tieneLanguage = modelRDF.createProperty(ns + "tieneLanguage");
-        Property tieneTitle = modelRDF.createProperty(ns + "tieneTitle");
-
-        try {
-            // Parsear el archivo XML
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(new File(filepath));
-
-            doc.getDocumentElement().normalize();
-
-            // Obtener elementos del documento
-            NodeList nodeList = doc.getElementsByTagName("oai_dc:dc");
-
-            for (int temp = 0; temp < nodeList.getLength(); temp++) {
-                Element element = (Element) nodeList.item(temp);
-
-                // Asociar atributos del XML a los recursos RDF
-                modelRDF.add(documento, tieneDate, getElementText(element, "dc:date"));
-                modelRDF.add(documento, tieneDescription, getElementText(element, "dc:description"));
-                modelRDF.add(documento, tieneLanguage, getElementText(element, "dc:language"));
-                modelRDF.add(documento, tieneTitle, getElementText(element, "dc:title"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // Imprimir el modelo RDF
-        modelRDF.write(System.out, "TURTLE");
-
-        return modelRDF;
-    }
-
-    private static String getElementText(Element element, String tagName) {
-        NodeList nodeList = element.getElementsByTagName(tagName);
-        if (nodeList.getLength() > 0) {
-            return nodeList.item(0).getTextContent();
-        } else {
-            return null;
-        }
-    }
-
-    // /**
-    //  * Carga los datos RDF desde un archivo externo al modelo RDF existente
-    //  */
-    // public static void cargarDatosRDF(Model modelRDF, String rdfPath) {
-    //     try {
-    //         modelRDF.read(new FileInputStream(rdfPath), null, "TURTLE");
-    //     } catch (FileNotFoundException e) {
-    //         System.out.println("Error al cargar datos RDF desde el archivo.");
-    //         e.printStackTrace();
-    //     }
-    // }
-
-    // /**
-    //  * Ejemplo de realizar una consulta SPARQL en el modelo RDF
-    //  */
-    // public static void realizarConsultaSPARQL(Model modelRDF) {
-    //     // Aquí puedes agregar tu consulta SPARQL
-    //     String sparqlQuery = "SELECT ?s WHERE { ?s <http://tu.esquema#tieneTitle> ?title }";
-
-    //     // Ejecuta la consulta SPARQL en el modelo RDF
-    //     Query query = QueryFactory.create(sparqlQuery);
-    //     QueryExecution qexec = QueryExecutionFactory.create(query, modelRDF);
-    //     ResultSet results = qexec.execSelect();
-
-    //     // Imprime los resultados de la consulta
-    //     ResultSetFormatter.out(System.out, results);
-
-    //     // Libera los recursos de la consulta
-    //     qexec.close();
-    // }
-
-    // /**
-    //  * Modifica el contenido de los archivos XML en el directorio docsPath
-    //  * y los guarda en el directorio rdfPath con consultas SPARQL
-    //  */
-    // public static void modificarArchivosXML(String docsPath, String rdfPath) {
-    //     try {
-    //         Path sourceDir = Paths.get(docsPath);
-    //         Path targetDir = Paths.get(rdfPath);
-
-    //         // Verifica si el directorio de documentos existe y es un directorio válido
-    //         if (Files.exists(sourceDir) && Files.isDirectory(sourceDir)) {
-    //             // Listar archivos en el directorio de documentos
-    //             try (DirectoryStream<Path> stream = Files.newDirectoryStream(sourceDir, "*.xml")) {
-    //                 for (Path sourceFile : stream) {
-    //                     // Leer el contenido del archivo XML
-    //                     String xmlContent = new String(Files.readAllBytes(sourceFile), StandardCharsets.UTF_8);
-
-    //                     // Modificar el contenido del archivo XML con la consulta SPARQL
-    //                     String modifiedContent = generarConsultaSPARQL(xmlContent);
-
-    //                     // Crear el nuevo nombre del archivo en el directorio RDF
-    //                     Path targetFile = targetDir.resolve(sourceFile.getFileName());
-
-    //                     // Guardar el contenido modificado en el nuevo archivo
-    //                     Files.write(targetFile, modifiedContent.getBytes(StandardCharsets.UTF_8));
-
-    //                     System.out.println("Archivo modificado y guardado en: " + targetFile);
-    //                 }
-    //             }
-    //         } else {
-    //             System.out.println("El directorio de documentos especificado no existe o no es un directorio válido.");
-    //         }
-    //     } catch (IOException e) {
-    //         System.out.println("Error al modificar archivos XML: " + e.getMessage());
-    //         e.printStackTrace();
-    //     }
-    // }
-
-    // /**
-    //  * Genera una consulta SPARQL basada en el contenido del archivo XML
-    //  */
-    // private static String generarConsultaSPARQL(String xmlContent) {
-    //     // Aquí puedes personalizar la lógica para generar la consulta SPARQL
-    //     // En este ejemplo, simplemente se reemplaza el contenido con una consulta de ejemplo
-    //     return "<?xml version=\"1.0\" encoding=\"UTF-8\"?><informationNeeds>\n" +
-    //             "<informationNeed>\n" +
-    //             "<identifier>101-4</identifier>\n" +
-    //             "<text>SELECT...</text>\n" +
-    //             "</informationNeed>\n" +
-    //             "<informationNeed>\n" +
-    //             "<identifier>106-4</identifier>\n" +
-    //             "<text>SELECT...</text>\n" +
-    //             "</informationNeed>\n" +
-    //             "</informationNeeds>";
-    // }
 
     /**
      * Función que lista todos los ficheros xml que se encuentran en el directorio de la colección
